@@ -6,6 +6,9 @@ const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
+// Load models
+require('./models');
+
 const app = express();
 
 // Security middleware
@@ -46,10 +49,8 @@ app.use('/api/tasks', require('./routes/tasks'));
 app.use('/api/reports', require('./routes/reports'));
 
 // Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).send({ message: 'Something went wrong!' });
-});
+const { globalErrorHandler } = require('./middleware/error');
+app.use(globalErrorHandler);
 
 const PORT = process.env.PORT || 5000;
 
