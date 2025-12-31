@@ -1,6 +1,11 @@
 const mongoose = require('mongoose');
 
 const TaskSchema = new mongoose.Schema({
+  companyId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Company',
+    required: [true, 'Please provide a company ID']
+  },
   title: {
     type: String,
     required: [true, 'Please provide a task title'],
@@ -13,17 +18,15 @@ const TaskSchema = new mongoose.Schema({
     maxlength: [500, 'Description cannot be more than 500 characters']
   },
   dueDate: {
-    type: Date,
-    required: [true, 'Please provide a due date']
+    type: Date
   },
   status: {
     type: String,
-    enum: ['pending', 'in_progress', 'completed', 'cancelled'],
+    enum: ['pending', 'in-progress', 'completed'],
     default: 'pending'
   },
   priority: {
     type: String,
-    enum: ['low', 'medium', 'high'],
     default: 'medium'
   },
   assignedTo: {
@@ -36,16 +39,17 @@ const TaskSchema = new mongoose.Schema({
     ref: 'User',
     required: [true, 'Please specify who created this task']
   },
-  relatedTo: {
-    modelType: {
-      type: String,
-      enum: ['Lead', 'Customer', 'Deal'],
-      required: true
-    },
-    modelId: {
-      type: mongoose.Schema.Types.ObjectId,
-      required: true
-    }
+  relatedToLeadId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Lead'
+  },
+  relatedToCustomerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Customer'
+  },
+  relatedToDealId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Deal'
   },
   completedAt: {
     type: Date
@@ -66,15 +70,21 @@ const TaskSchema = new mongoose.Schema({
       trim: true,
       maxlength: [200, 'Reminder message cannot be more than 200 characters']
     }
+  },
+  customFields: {
+    type: Map,
+    of: mongoose.Schema.Types.Mixed
   }
 }, {
   timestamps: true
 });
 
 // Index for performance
-TaskSchema.index({ assignedTo: 1, status: 1 });
-TaskSchema.index({ dueDate: 1 });
-TaskSchema.index({ 'relatedTo.modelType': 1, 'relatedTo.modelId': 1 });
+TaskSchema.index({ companyId: 1, assignedTo: 1, status: 1 });
+TaskSchema.index({ companyId: 1, dueDate: 1 });
+TaskSchema.index({ companyId: 1, relatedToLeadId: 1 });
+TaskSchema.index({ companyId: 1, relatedToCustomerId: 1 });
+TaskSchema.index({ companyId: 1, relatedToDealId: 1 });
 
 // Set completedAt when status is changed to completed
 TaskSchema.pre('save', function(next) {

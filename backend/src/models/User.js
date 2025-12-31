@@ -11,7 +11,6 @@ const UserSchema = new mongoose.Schema({
   email: {
     type: String,
     required: [true, 'Please provide an email'],
-    unique: true,
     match: [
       /^(([^<>()[\]\.,;:\s@"]+(\.[^<>()[\]\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
       'Please provide a valid email'
@@ -20,13 +19,25 @@ const UserSchema = new mongoose.Schema({
   password: {
     type: String,
     required: [true, 'Please provide a password'],
-    minlength: [6, 'Password must be at least 6 characters'],
-    select: false
+    minlength: [8, 'Password must be at least 8 characters'],
+    select: false,
+    validate: {
+      validator: function(password) {
+        // Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character
+        return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/.test(password);
+      },
+      message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
+    }
+  },
+  companyId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Company',
+    required: [true, 'Please provide a company ID']
   },
   role: {
     type: String,
-    enum: ['admin', 'manager', 'executive'],
-    default: 'executive'
+    enum: ['admin', 'manager', 'sales', 'support'],
+    default: 'sales'
   },
   avatar: {
     type: String,
@@ -46,10 +57,28 @@ const UserSchema = new mongoose.Schema({
   },
   lastLogin: {
     type: Date
+  },
+  resetPasswordToken: String,
+  resetPasswordExpire: Date,
+  loginAttempts: {
+    type: Number,
+    default: 0
+  },
+  lockUntil: Date,
+  permissions: {
+    // Specific permissions for this user
+    canViewReports: { type: Boolean, default: true },
+    canManageUsers: { type: Boolean, default: false },
+    canManageSettings: { type: Boolean, default: false },
+    canDeleteData: { type: Boolean, default: false },
+    canExportData: { type: Boolean, default: true }
   }
 }, {
   timestamps: true
 });
+
+// Compound index to ensure email is unique within each company
+UserSchema.index({ email: 1, companyId: 1 }, { unique: true });
 
 // Hash password before saving
 UserSchema.pre('save', async function(next) {

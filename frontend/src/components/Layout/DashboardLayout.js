@@ -9,7 +9,7 @@ import {
   UserGroupIcon,
   BuildingOfficeIcon,
   CurrencyDollarIcon,
-  CheckSquareIcon,
+  ClipboardDocumentCheckIcon,
   ChartBarIcon,
   ArrowRightOnRectangleIcon,
   Bars3Icon,
@@ -21,7 +21,7 @@ const navigation = [
   { name: 'Leads', href: '/leads', icon: UserGroupIcon },
   { name: 'Customers', href: '/customers', icon: BuildingOfficeIcon },
   { name: 'Deals', href: '/deals', icon: CurrencyDollarIcon },
-  { name: 'Tasks', href: '/tasks', icon: CheckSquareIcon },
+  { name: 'Tasks', href: '/tasks', icon: ClipboardDocumentCheckIcon },
   { name: 'Reports', href: '/reports', icon: ChartBarIcon },
 ];
 

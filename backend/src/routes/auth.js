@@ -7,6 +7,13 @@ const ActivityLog = require('../models/ActivityLog');
 const { protect } = require('../middleware/auth');
 const { handleValidationErrors } = require('../middleware/validation');
 const { catchAsync } = require('../middleware/error');
+const { 
+  generateToken, 
+  sensitiveRateLimit, 
+  sanitizeInput, 
+  detectSuspiciousActivity,
+  addSecurityHeaders 
+} = require('../middleware/security');
 
 // @route   POST api/auth/register
 // @desc    Register a user
@@ -81,6 +88,10 @@ router.post('/register',
 // @desc    Authenticate user & get token
 // @access  Public
 router.post('/login',
+  sensitiveRateLimit(5, 15 * 60 * 1000), // 5 attempts per 15 minutes
+  sanitizeInput,
+  detectSuspiciousActivity,
+  addSecurityHeaders,
   [
     body('email').isEmail().withMessage('Please provide a valid email'),
     body('password').notEmpty().withMessage('Password is required')
@@ -103,9 +114,20 @@ router.post('/login',
     const isMatch = await user.comparePassword(password);
 
     if (!isMatch) {
+      // Increment login attempts
+      user.loginAttempts += 1;
+      
+      // Lock account after 5 failed attempts
+      if (user.loginAttempts >= 5) {
+        user.lockUntil = Date.now() + 2 * 60 * 60 * 1000; // Lock for 2 hours
+      }
+      
+      await user.save({ validateBeforeSave: false });
+      
       return res.status(401).json({
         success: false,
-        message: 'Invalid credentials'
+        message: 'Invalid credentials',
+        ...(user.loginAttempts >= 4 && { attemptsRemaining: 5 - user.loginAttempts })
       });
     }
 
@@ -130,7 +152,9 @@ router.post('/login',
       { expiresIn: process.env.JWT_REFRESH_EXPIRE || '7d' }
     );
 
-    // Update last login
+    // Reset login attempts and update last login
+    user.loginAttempts = 0;
+    user.lockUntil = undefined;
     user.lastLogin = new Date();
     await user.save();
 

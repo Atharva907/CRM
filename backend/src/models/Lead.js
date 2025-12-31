@@ -1,6 +1,11 @@
 const mongoose = require('mongoose');
 
 const LeadSchema = new mongoose.Schema({
+  companyId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Company',
+    required: [true, 'Please provide a company ID']
+  },
   name: {
     type: String,
     required: [true, 'Please provide a name'],
@@ -31,12 +36,11 @@ const LeadSchema = new mongoose.Schema({
   },
   source: {
     type: String,
-    enum: ['website', 'referral', 'social_media', 'email', 'phone', 'advertisement', 'other'],
     default: 'other'
   },
   status: {
     type: String,
-    enum: ['new', 'contacted', 'follow_up', 'interested', 'converted', 'lost'],
+    enum: ['new', 'contacted', 'qualified', 'converted', 'lost'],
     default: 'new'
   },
   assignedTo: {
@@ -71,14 +75,18 @@ const LeadSchema = new mongoose.Schema({
   customerId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Customer'
+  },
+  customFields: {
+    type: Map,
+    of: mongoose.Schema.Types.Mixed
   }
 }, {
   timestamps: true
 });
 
 // Index for performance
-LeadSchema.index({ assignedTo: 1, status: 1 });
-LeadSchema.index({ email: 1 }, { sparse: true });
-LeadSchema.index({ phone: 1 }, { sparse: true });
+LeadSchema.index({ companyId: 1, assignedTo: 1, status: 1 });
+LeadSchema.index({ companyId: 1, email: 1 }, { sparse: true });
+LeadSchema.index({ companyId: 1, phone: 1 }, { sparse: true });
 
 module.exports = mongoose.model('Lead', LeadSchema);

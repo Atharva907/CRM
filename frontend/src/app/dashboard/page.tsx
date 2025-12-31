@@ -9,7 +9,7 @@ import {
   UserGroupIcon,
   BuildingOfficeIcon,
   CurrencyDollarIcon,
-  CheckSquareIcon,
+  ClipboardDocumentCheckIcon,
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
 } from '@heroicons/react/24/outline';
@@ -151,7 +151,7 @@ export default function Dashboard() {
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <CheckSquareIcon className="h-6 w-6 text-gray-400" aria-hidden="true" />
+                  <ClipboardDocumentCheckIcon className="h-6 w-6 text-gray-400" aria-hidden="true" />
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>

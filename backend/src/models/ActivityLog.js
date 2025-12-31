@@ -1,6 +1,11 @@
 const mongoose = require('mongoose');
 
 const ActivityLogSchema = new mongoose.Schema({
+  companyId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Company',
+    required: [true, 'Please provide a company ID']
+  },
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

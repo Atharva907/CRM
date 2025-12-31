@@ -1,8 +1,9 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const Company = require('../models/Company');
 
 // Protect routes - verify JWT token
-exports.protect = async (req, res, next) => {
+const protect = async (req, res, next) => {
   let token;
 
   // Get token from header
@@ -22,8 +23,25 @@ exports.protect = async (req, res, next) => {
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Get user from the token
-    req.user = await User.findById(decoded.id);
+    // Get user from the token with company data
+    req.user = await User.findById(decoded.id).populate('companyId');
+
+    // Check if account is locked
+    if (req.user.lockUntil && req.user.lockUntil > Date.now()) {
+      return res.status(423).json({
+        success: false,
+        message: 'Account is locked. Please try again later.',
+        lockedUntil: req.user.lockUntil
+      });
+    }
+    
+    // Check if user is active and company is active
+    if (!req.user.isActive || !req.user.companyId.isActive) {
+      return res.status(401).json({
+        success: false,
+        message: 'Account or company is not active'
+      });
+    }
 
     next();
   } catch (err) {
@@ -35,7 +53,7 @@ exports.protect = async (req, res, next) => {
 };
 
 // Grant access to specific roles
-exports.authorize = (...roles) => {
+const authorize = (...roles) => {
   return (req, res, next) => {
     if (!req.user) {
       return res.status(401).json({
@@ -54,8 +72,13 @@ exports.authorize = (...roles) => {
   };
 };
 
+// Check if account is locked
+const isLocked = (user) => {
+  return !!(user.lockUntil && user.lockUntil > Date.now());
+};
+
 // Refresh access token
-exports.refreshToken = async (req, res) => {
+const refreshToken = async (req, res) => {
   const { refreshToken } = req.body;
 
   if (!refreshToken) {
@@ -97,3 +120,5 @@ exports.refreshToken = async (req, res) => {
     });
   }
 };
+
+module.exports = { protect, authorize, refreshToken };

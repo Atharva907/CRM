@@ -1,6 +1,11 @@
 const mongoose = require('mongoose');
 
 const CustomerSchema = new mongoose.Schema({
+  companyId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Company',
+    required: [true, 'Please provide a company ID']
+  },
   name: {
     type: String,
     required: [true, 'Please provide a name'],
@@ -37,6 +42,10 @@ const CustomerSchema = new mongoose.Schema({
     zip: String,
     country: String
   },
+  industry: {
+    type: String,
+    trim: true
+  },
   assignedTo: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -48,7 +57,6 @@ const CustomerSchema = new mongoose.Schema({
   },
   source: {
     type: String,
-    enum: ['website', 'referral', 'social_media', 'email', 'phone', 'advertisement', 'other'],
     default: 'other'
   },
   tags: [{
@@ -85,14 +93,18 @@ const CustomerSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true
+  },
+  customFields: {
+    type: Map,
+    of: mongoose.Schema.Types.Mixed
   }
 }, {
   timestamps: true
 });
 
 // Index for performance
-CustomerSchema.index({ assignedTo: 1 });
-CustomerSchema.index({ email: 1 });
-CustomerSchema.index({ leadId: 1 });
+CustomerSchema.index({ companyId: 1, assignedTo: 1 });
+CustomerSchema.index({ companyId: 1, email: 1 });
+CustomerSchema.index({ companyId: 1, leadId: 1 });
 
 module.exports = mongoose.model('Customer', CustomerSchema);

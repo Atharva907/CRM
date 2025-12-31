@@ -1,11 +1,16 @@
 const mongoose = require('mongoose');
 
 const DealSchema = new mongoose.Schema({
-  name: {
+  companyId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Company',
+    required: [true, 'Please provide a company ID']
+  },
+  title: {
     type: String,
-    required: [true, 'Please provide a deal name'],
+    required: [true, 'Please provide a deal title'],
     trim: true,
-    maxlength: [100, 'Deal name cannot be more than 100 characters']
+    maxlength: [100, 'Deal title cannot be more than 100 characters']
   },
   description: {
     type: String,
@@ -17,60 +22,30 @@ const DealSchema = new mongoose.Schema({
     required: [true, 'Please provide a deal value'],
     min: [0, 'Deal value must be a positive number']
   },
-  currency: {
-    type: String,
-    enum: ['USD', 'EUR', 'GBP', 'JPY', 'CNY', 'INR'],
-    default: 'USD'
-  },
   stage: {
     type: String,
-    enum: ['prospecting', 'qualification', 'proposal', 'negotiation', 'closed_won', 'closed_lost'],
-    default: 'prospecting'
+    default: 'lead'
   },
-  probability: {
-    type: Number,
-    min: [0, 'Probability cannot be less than 0%'],
-    max: [100, 'Probability cannot be more than 100%'],
-    default: 0
+  status: {
+    type: String,
+    enum: ['active', 'inactive', 'pending'],
+    default: 'active'
   },
   expectedCloseDate: {
-    type: Date,
-    required: [true, 'Please provide an expected close date']
+    type: Date
   },
   actualCloseDate: {
     type: Date
   },
-  customer: {
+  customerId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Customer',
-    required: [true, 'Please associate this deal with a customer']
+    ref: 'Customer'
   },
   assignedTo: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: [true, 'Please assign this deal to a user']
   },
-  products: [{
-    name: {
-      type: String,
-      required: true,
-      trim: true
-    },
-    quantity: {
-      type: Number,
-      required: true,
-      min: [1, 'Quantity must be at least 1']
-    },
-    unitPrice: {
-      type: Number,
-      required: true,
-      min: [0, 'Unit price must be a positive number']
-    },
-    total: {
-      type: Number,
-      required: true
-    }
-  }],
   tags: [{
     type: String,
     trim: true
@@ -91,40 +66,23 @@ const DealSchema = new mongoose.Schema({
       default: Date.now
     }
   }],
-  activities: [{
-    type: {
-      type: String,
-      enum: ['call', 'email', 'meeting', 'note', 'task'],
-      required: true
-    },
-    description: {
-      type: String,
-      required: true,
-      maxlength: [500, 'Activity description cannot be more than 500 characters']
-    },
-    date: {
-      type: Date,
-      default: Date.now
-    },
-    createdBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true
-    }
-  }],
   lostReason: {
     type: String,
     trim: true,
     maxlength: [500, 'Lost reason cannot be more than 500 characters']
+  },
+  customFields: {
+    type: Map,
+    of: mongoose.Schema.Types.Mixed
   }
 }, {
   timestamps: true
 });
 
 // Index for performance
-DealSchema.index({ assignedTo: 1, stage: 1 });
-DealSchema.index({ customer: 1 });
-DealSchema.index({ expectedCloseDate: 1 });
+DealSchema.index({ companyId: 1, assignedTo: 1, stage: 1 });
+DealSchema.index({ companyId: 1, customerId: 1 });
+DealSchema.index({ companyId: 1, expectedCloseDate: 1 });
 
 // Calculate probability based on stage
 DealSchema.pre('save', function(next) {
