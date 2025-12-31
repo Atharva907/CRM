@@ -16,12 +16,12 @@ import {
 import toast from 'react-hot-toast';
 
 const dealStages = [
-  { id: 'lead', name: 'Lead' },
-  { id: 'qualified', name: 'Qualified' },
+  { id: 'prospecting', name: 'Prospecting' },
+  { id: 'qualification', name: 'Qualification' },
   { id: 'proposal', name: 'Proposal' },
   { id: 'negotiation', name: 'Negotiation' },
-  { id: 'closed-won', name: 'Closed Won' },
-  { id: 'closed-lost', name: 'Closed Lost' }
+  { id: 'closed_won', name: 'Closed Won' },
+  { id: 'closed_lost', name: 'Closed Lost' }
 ];
 
 const statusOptions = [
@@ -79,11 +79,12 @@ export default function DealsList() {
       
       const response = await api.get(`/deals?${params.toString()}`);
       
-      setDeals(response.data.deals);
+      const data = await response.json();
+      setDeals(data.data || []);
       setPagination({
-        currentPage: response.data.currentPage,
-        totalPages: response.data.totalPages,
-        total: response.data.total
+        currentPage: data.pagination?.page || 1,
+        totalPages: data.pagination?.pages || 1,
+        total: data.pagination?.total || 0
       });
       setLoading(false);
     } catch (error) {
@@ -96,7 +97,8 @@ export default function DealsList() {
   const fetchCustomers = async () => {
     try {
       const response = await api.get('/customers?limit=100');
-      setCustomers(response.data.customers);
+      const data = await response.json();
+      setCustomers(data.data || []);
     } catch (error) {
       console.error('Error fetching customers:', error);
     }

@@ -43,6 +43,7 @@ const CustomersList = () => {
     source: 'other',
     tags: [],
     notes: '',
+    assignedTo: '',
   });
   const [pagination, setPagination] = useState({
     page: 1,
@@ -91,7 +92,13 @@ const CustomersList = () => {
   const handleAddCustomer = async (e) => {
     e.preventDefault();
     try {
-      const response = await api.post('/customers', newCustomer);
+      // Set assignedTo to current user ID
+      const customerData = { 
+        ...newCustomer, 
+        assignedTo: user.id,
+
+      };
+      const response = await api.post('/customers', customerData);
       const data = await response.json();
 
       if (data.success) {
@@ -113,6 +120,7 @@ const CustomersList = () => {
           source: 'other',
           tags: [],
           notes: '',
+          assignedTo: '',
         });
         fetchCustomers(pagination.page, searchTerm);
       } else {
@@ -535,7 +543,7 @@ const CustomersList = () => {
                         required
                         value={newCustomer.name}
                         onChange={handleInputChange}
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
                       />
                     </div>
 
@@ -550,7 +558,7 @@ const CustomersList = () => {
                         required
                         value={newCustomer.email}
                         onChange={handleInputChange}
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
                       />
                     </div>
 
@@ -564,7 +572,7 @@ const CustomersList = () => {
                         id="phone"
                         value={newCustomer.phone}
                         onChange={handleInputChange}
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
                       />
                     </div>
 
@@ -578,7 +586,7 @@ const CustomersList = () => {
                         id="company"
                         value={newCustomer.company}
                         onChange={handleInputChange}
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
                       />
                     </div>
 
@@ -592,7 +600,7 @@ const CustomersList = () => {
                         id="position"
                         value={newCustomer.position}
                         onChange={handleInputChange}
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
                       />
                     </div>
 
@@ -607,7 +615,7 @@ const CustomersList = () => {
                           id="address.street"
                           value={newCustomer.address.street}
                           onChange={handleInputChange}
-                          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
                         />
                       </div>
 
@@ -621,7 +629,7 @@ const CustomersList = () => {
                           id="address.city"
                           value={newCustomer.address.city}
                           onChange={handleInputChange}
-                          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
                         />
                       </div>
                     </div>
@@ -637,7 +645,7 @@ const CustomersList = () => {
                           id="address.state"
                           value={newCustomer.address.state}
                           onChange={handleInputChange}
-                          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
                         />
                       </div>
 
@@ -651,7 +659,7 @@ const CustomersList = () => {
                           id="address.zip"
                           value={newCustomer.address.zip}
                           onChange={handleInputChange}
-                          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
                         />
                       </div>
                     </div>
@@ -666,7 +674,7 @@ const CustomersList = () => {
                         id="address.country"
                         value={newCustomer.address.country}
                         onChange={handleInputChange}
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
                       />
                     </div>
 
@@ -679,7 +687,7 @@ const CustomersList = () => {
                         name="source"
                         value={newCustomer.source}
                         onChange={handleInputChange}
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
                       >
                         <option value="website">Website</option>
                         <option value="referral">Referral</option>
@@ -942,7 +950,7 @@ const CustomersList = () => {
                         required
                         value={newCustomer.name}
                         onChange={handleInputChange}
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
                       />
                     </div>
 
@@ -957,7 +965,7 @@ const CustomersList = () => {
                         required
                         value={newCustomer.email}
                         onChange={handleInputChange}
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
                       />
                     </div>
 
@@ -971,7 +979,7 @@ const CustomersList = () => {
                         id="phone"
                         value={newCustomer.phone}
                         onChange={handleInputChange}
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
                       />
                     </div>
 
@@ -985,7 +993,7 @@ const CustomersList = () => {
                         id="company"
                         value={newCustomer.company}
                         onChange={handleInputChange}
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
                       />
                     </div>
 
@@ -999,7 +1007,7 @@ const CustomersList = () => {
                         id="position"
                         value={newCustomer.position}
                         onChange={handleInputChange}
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
                       />
                     </div>
 
@@ -1014,7 +1022,7 @@ const CustomersList = () => {
                           id="address.street"
                           value={newCustomer.address.street}
                           onChange={handleInputChange}
-                          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
                         />
                       </div>
 
@@ -1028,7 +1036,7 @@ const CustomersList = () => {
                           id="address.city"
                           value={newCustomer.address.city}
                           onChange={handleInputChange}
-                          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
                         />
                       </div>
                     </div>
@@ -1044,7 +1052,7 @@ const CustomersList = () => {
                           id="address.state"
                           value={newCustomer.address.state}
                           onChange={handleInputChange}
-                          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
                         />
                       </div>
 
@@ -1058,7 +1066,7 @@ const CustomersList = () => {
                           id="address.zip"
                           value={newCustomer.address.zip}
                           onChange={handleInputChange}
-                          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
                         />
                       </div>
                     </div>
@@ -1073,7 +1081,7 @@ const CustomersList = () => {
                         id="address.country"
                         value={newCustomer.address.country}
                         onChange={handleInputChange}
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
                       />
                     </div>
 
@@ -1086,7 +1094,7 @@ const CustomersList = () => {
                         name="source"
                         value={newCustomer.source}
                         onChange={handleInputChange}
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
                       >
                         <option value="website">Website</option>
                         <option value="referral">Referral</option>

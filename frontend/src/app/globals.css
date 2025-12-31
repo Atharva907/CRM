@@ -8,6 +8,16 @@
   --background-end-rgb: 255, 255, 255;
 }
 
+/* Fix input text color across the application */
+input, select, textarea {
+  color: #000000 !important;
+}
+
+/* Ensure placeholder text is visible */
+input::placeholder, textarea::placeholder {
+  color: #6b7280 !important;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --foreground-rgb: 255, 255, 255;
@@ -97,12 +107,17 @@ body {
   border-radius: 6px;
   font-size: 0.875rem;
   line-height: 1.25rem;
+  color: #111827;
 }
 
 .form-input:focus {
   outline: none;
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+select {
+  color: #111827;
 }
 
 .form-label {

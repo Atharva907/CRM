@@ -1,11 +1,6 @@
 const mongoose = require('mongoose');
 
 const CustomerSchema = new mongoose.Schema({
-  companyId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Company',
-    required: [true, 'Please provide a company ID']
-  },
   name: {
     type: String,
     required: [true, 'Please provide a name'],
@@ -103,8 +98,8 @@ const CustomerSchema = new mongoose.Schema({
 });
 
 // Index for performance
-CustomerSchema.index({ companyId: 1, assignedTo: 1 });
-CustomerSchema.index({ companyId: 1, email: 1 });
-CustomerSchema.index({ companyId: 1, leadId: 1 });
+CustomerSchema.index({ assignedTo: 1 });
+CustomerSchema.index({ email: 1 });
+CustomerSchema.index({ leadId: 1 });
 
 module.exports = mongoose.model('Customer', CustomerSchema);

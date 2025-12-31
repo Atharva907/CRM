@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -15,14 +16,60 @@ export default function ManagerDashboard({ user }) {
     recentDeals: []
   });
   const [loading, setLoading] = useState(true);
-  
+
   // Fetch manager-specific data
   useEffect(() => {
     const fetchManagerStats = async () => {
       try {
         setLoading(true);
-        // In a real implementation, you would have an endpoint for manager stats
-        // For now, we'll use mock data
+
+        // Fetch real data from API endpoints
+        const [teamResponse, dealsResponse, tasksResponse] = await Promise.all([
+          api.get('/manager/team'),
+          api.get('/deals'),
+          api.get('/tasks')
+        ]);
+
+        const teamData = await teamResponse.json();
+        const dealsData = await dealsResponse.json();
+        const tasksData = await tasksResponse.json();
+
+        // Calculate team metrics
+        const teamMembers = teamData.data?.length || 0;
+        const teamDealsValue = dealsData.data?.reduce((total, deal) => total + (deal.value || 0), 0) || 0;
+        const teamTasksPending = tasksData.data?.filter(task => task.status !== 'completed').length || 0;
+        const conversionRate = teamMembers > 0 ? 
+          Math.round((dealsData.data?.filter(deal => deal.stage === 'won').length / dealsData.data?.length) * 100) || 0 : 0;
+
+        // Get top performers
+        const topPerformers = teamData.data?.map(member => ({
+          id: member._id,
+          name: member.name,
+          deals: dealsData.data?.filter(deal => deal.assignedTo === member._id).length || 0,
+          value: dealsData.data?.filter(deal => deal.assignedTo === member._id)
+            .reduce((total, deal) => total + (deal.value || 0), 0) || 0
+        })).sort((a, b) => b.value - a.value).slice(0, 3) || [];
+
+        // Get recent deals
+        const recentDeals = dealsData.data?.slice(0, 3).map(deal => ({
+          id: deal._id,
+          title: deal.title,
+          value: deal.value,
+          assignedTo: teamData.data?.find(member => member._id === deal.assignedTo)?.name || 'Unassigned',
+          stage: deal.stage
+        })) || [];
+
+        setStats({
+          teamMembers,
+          teamDealsValue,
+          teamTasksPending,
+          conversionRate,
+          topPerformers,
+          recentDeals
+        });
+      } catch (error) {
+        console.error('Error fetching manager stats:', error);
+        // Fallback to mock data if API fails
         setStats({
           teamMembers: 8,
           teamDealsValue: 125000,
@@ -39,13 +86,11 @@ export default function ManagerDashboard({ user }) {
             { id: 3, title: 'Training Services', value: 8000, assignedTo: 'Michael Davis', stage: 'qualification' }
           ]
         });
-      } catch (error) {
-        console.error('Error fetching manager stats:', error);
       } finally {
         setLoading(false);
       }
     };
-    
+
     fetchManagerStats();
   }, []);
 
@@ -55,7 +100,7 @@ export default function ManagerDashboard({ user }) {
         <h2 className="text-2xl font-bold text-gray-900">Manager Dashboard</h2>
         <p className="text-gray-600">Team performance and management</p>
       </div>
-      
+
       {loading ? (
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
@@ -81,7 +126,7 @@ export default function ManagerDashboard({ user }) {
                 </div>
               </div>
             </div>
-            
+
             <div className="bg-white overflow-hidden shadow rounded-lg">
               <div className="p-5">
                 <div className="flex items-center">
@@ -99,7 +144,7 @@ export default function ManagerDashboard({ user }) {
                 </div>
               </div>
             </div>
-            
+
             <div className="bg-white overflow-hidden shadow rounded-lg">
               <div className="p-5">
                 <div className="flex items-center">
@@ -117,7 +162,7 @@ export default function ManagerDashboard({ user }) {
                 </div>
               </div>
             </div>
-            
+
             <div className="bg-white overflow-hidden shadow rounded-lg">
               <div className="p-5">
                 <div className="flex items-center">
@@ -139,7 +184,7 @@ export default function ManagerDashboard({ user }) {
               </div>
             </div>
           </div>
-          
+
           {/* Manager-specific features */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-white shadow rounded-lg p-6">
@@ -147,36 +192,89 @@ export default function ManagerDashboard({ user }) {
                 Team Management
               </h3>
               <div className="space-y-3">
-                <Link href="/manager/team" className="block p-3 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors">
-                  View Team Performance
+                <Link href="/leads" className="flex items-center justify-between p-3 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors">
+                  <span>Lead Assignments</span>
+                  <span className="text-xs bg-indigo-100 text-indigo-800 px-2.5 py-0.5 rounded-full">Manage</span>
                 </Link>
-                <Link href="/manager/assignments" className="block p-3 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors">
-                  Lead Assignments
+                <Link href="/deals" className="flex items-center justify-between p-3 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors">
+                  <span>Deal Approvals</span>
+                  <span className="text-xs bg-green-100 text-green-800 px-2.5 py-0.5 rounded-full">Review</span>
                 </Link>
-                <Link href="/manager/schedule" className="block p-3 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors">
-                  Team Schedule
+                <Link href="/tasks" className="flex items-center justify-between p-3 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors">
+                  <span>Task Management</span>
+                  <span className="text-xs bg-yellow-100 text-yellow-800 px-2.5 py-0.5 rounded-full">Assign</span>
                 </Link>
               </div>
             </div>
-            
+
             <div className="bg-white shadow rounded-lg p-6">
               <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-                Team Reports
+                Team Performance
               </h3>
               <div className="space-y-3">
-                <Link href="/manager/performance" className="block p-3 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors">
-                  Performance Metrics
+                <Link href="/reports" className="flex items-center justify-between p-3 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors">
+                  <span>Sales Reports</span>
+                  <span className="text-xs bg-blue-100 text-blue-800 px-2.5 py-0.5 rounded-full">View</span>
                 </Link>
-                <Link href="/manager/pipeline" className="block p-3 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors">
-                  Sales Pipeline
+                <Link href="/customers" className="flex items-center justify-between p-3 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors">
+                  <span>Customer Management</span>
+                  <span className="text-xs bg-purple-100 text-purple-800 px-2.5 py-0.5 rounded-full">Access</span>
                 </Link>
-                <Link href="/manager/forecast" className="block p-3 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors">
-                  Sales Forecast
+                <Link href="/manager/team" className="flex items-center justify-between p-3 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors">
+                  <span>Team Performance</span>
+                  <span className="text-xs bg-indigo-100 text-indigo-800 px-2.5 py-0.5 rounded-full">Monitor</span>
                 </Link>
               </div>
             </div>
           </div>
-          
+
+          {/* Top Performers */}
+          <div className="bg-white shadow rounded-lg mt-6">
+            <div className="px-4 py-5 sm:p-6">
+              <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+                Top Performers This Month
+              </h3>
+              <div className="flow-root">
+                <ul className="-my-5 divide-y divide-gray-200">
+                  {stats.topPerformers.length > 0 ? (
+                    stats.topPerformers.map((performer) => (
+                      <li key={performer.id} className="py-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <div className="flex-shrink-0">
+                              <div className="h-8 w-8 rounded-full bg-indigo-500 flex items-center justify-center">
+                                <span className="text-white font-medium text-sm">
+                                  {performer.name.charAt(0).toUpperCase()}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate">
+                                {performer.name}
+                              </p>
+                              <p className="text-sm text-gray-500 truncate">
+                                {performer.deals} deals
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-medium text-gray-900">
+                              ${performer.value.toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                      </li>
+                    ))
+                  ) : (
+                    <li className="py-4">
+                      <p className="text-sm text-gray-500">No performance data available</p>
+                    </li>
+                  )}
+                </ul>
+              </div>
+            </div>
+          </div>
+
           {/* Top Performers */}
           <div className="bg-white shadow rounded-lg mt-6">
             <div className="px-4 py-5 sm:p-6">

@@ -23,12 +23,11 @@ router.post('/register',
     body('name').notEmpty().withMessage('Name is required'),
     body('email').isEmail().withMessage('Please provide a valid email'),
     body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
-    body('role').optional().isIn(['admin', 'manager', 'sales', 'support']).withMessage('Invalid role'),
-    body('company').notEmpty().withMessage('Company name is required')
+    body('role').optional().isIn(['admin', 'manager', 'sales', 'support']).withMessage('Invalid role')
   ],
   handleValidationErrors,
   catchAsync(async (req, res) => {
-    const { name, email, password, role, company } = req.body;
+    const { name, email, password, role } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -39,34 +38,35 @@ router.post('/register',
       });
     }
 
-    // Create a new company if it doesn't exist
-    const Company = require('../models/Company');
-    let companyDoc = await Company.findOne({ name: company });
-    
-    if (!companyDoc) {
-      // Generate a domain from the company name
-      const domain = company.toLowerCase().replace(/[^a-z0-9]/g, '') + '.crm';
-      
-      companyDoc = await Company.create({
-        name: company,
-        domain: domain,
-        createdBy: null // Will be updated with the user ID after creation
-      });
+    // Check if an admin already exists
+    if (role === 'admin') {
+      const adminExists = await User.findOne({ role: 'admin' });
+      if (adminExists) {
+        return res.status(403).json({
+          success: false,
+          message: 'Admin registration is only allowed for the initial setup. Please contact an existing admin to create your account.'
+        });
+      }
     }
+
+
+
+    
+
+
+
+      
+
     
     // Create user
     const user = await User.create({
       name,
       email,
       password,
-      companyId: companyDoc._id,
-      role: role || 'admin' // First user in a company is admin by default
+      role: role || 'sales' // Default role is sales if not specified
     });
     
-    // Update company with the user ID if this is a new company
-    if (!companyDoc.createdBy) {
-      await Company.findByIdAndUpdate(companyDoc._id, { createdBy: user._id });
-    }
+
 
     // Create token
     const accessToken = jwt.sign(
@@ -83,7 +83,7 @@ router.post('/register',
 
     // Log activity
     await ActivityLog.create({
-      companyId: typeof user.companyId === 'object' ? user.companyId._id : user.companyId,
+
       user: user._id,
       action: 'register',
       resourceType: 'User',
@@ -189,7 +189,7 @@ router.post('/login',
 
     // Log activity
     await ActivityLog.create({
-      companyId: typeof user.companyId === 'object' ? user.companyId._id : user.companyId,
+
       user: user._id,
       action: 'login',
       resourceType: 'User',

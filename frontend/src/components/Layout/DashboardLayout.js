@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../../contexts/AuthContext';
+import { canAccessNavigation } from '../../utils/permissions';
 import {
   HomeIcon,
   UserGroupIcon,
@@ -14,15 +15,18 @@ import {
   ArrowRightOnRectangleIcon,
   Bars3Icon,
   XMarkIcon,
+  CogIcon,
 } from '@heroicons/react/24/outline';
 
-const navigation = [
+const allNavigation = [
   { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
   { name: 'Leads', href: '/leads', icon: UserGroupIcon },
   { name: 'Customers', href: '/customers', icon: BuildingOfficeIcon },
   { name: 'Deals', href: '/deals', icon: CurrencyDollarIcon },
   { name: 'Tasks', href: '/tasks', icon: ClipboardDocumentCheckIcon },
   { name: 'Reports', href: '/reports', icon: ChartBarIcon },
+  { name: 'User Management', href: '/admin/users', icon: UserGroupIcon },
+  { name: 'System Configuration', href: '/admin/settings', icon: CogIcon },
 ];
 
 const DashboardLayout = ({ children }) => {
@@ -126,6 +130,11 @@ const DashboardLayout = ({ children }) => {
 const SidebarContent = ({ logout }) => {
   const { user } = useAuth();
   const router = useRouter();
+
+  // Filter navigation items based on user role permissions
+  const navigation = allNavigation.filter(item => 
+    canAccessNavigation(user?.role, item.href)
+  );
 
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-indigo-700">

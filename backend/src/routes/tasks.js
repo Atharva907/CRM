@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { protect } = require('../middleware/auth');
+const { protect, checkPermission } = require('../middleware/auth');
+const { hasPermission } = require('../utils/permissions');
 const Task = require('../models/Task');
 
 // @route   GET api/tasks
@@ -9,7 +10,14 @@ const Task = require('../models/Task');
 router.get('/', protect, async (req, res) => {
   try {
     const { page = 1, limit = 10, status, priority, search } = req.query;
-    const query = { assignedTo: req.user.id };
+    const query = {};
+
+    // Role-based filtering
+    if (!hasPermission(req.user.role, 'canViewAllTasks')) {
+      // Users who can't view all tasks only see their own
+      query.assignedTo = req.user.id;
+    }
+    // Users with canViewAllTasks permission can see all tasks
     
     // Filter by status if provided
     if (status) {

@@ -16,12 +16,23 @@ exports.handleValidationErrors = (req, res, next) => {
 };
 
 // Custom validation functions
-exports.validateObjectId = (req, res, next) => {
-  if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
-    return res.status(400).json({
-      success: false,
-      message: 'Invalid ID format'
-    });
-  }
-  next();
+exports.validateObjectId = (paramName = 'id') => {
+  return (req, res, next) => {
+    const id = req.params[paramName];
+
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID parameter is required'
+      });
+    }
+
+    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid ID format'
+      });
+    }
+    next();
+  };
 };

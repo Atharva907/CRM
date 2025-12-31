@@ -8,7 +8,6 @@ import {
   FunnelIcon,
   XMarkIcon,
   UserIcon,
-  TrendingUpIcon,
   CurrencyDollarIcon,
   PhoneIcon,
   CheckCircleIcon
@@ -169,7 +168,7 @@ export default function TeamPerformance() {
                 onChange={(e) => setFilterMember(e.target.value)}
               >
                 <option value="">All Members</option>
-                {teamMembers.map((member) => (
+                {teamMembers && teamMembers.map((member) => (
                   <option key={member._id} value={member._id}>
                     {member.name}
                   </option>
@@ -192,7 +191,7 @@ export default function TeamPerformance() {
                 <dl>
                   <dt className="text-sm font-medium text-gray-500 truncate">Total Revenue</dt>
                   <dd className="text-lg font-medium text-gray-900">
-                    {formatCurrency(performanceData.reduce((sum, member) => sum + (member.revenue || 0), 0))}
+                    {formatCurrency(performanceData ? performanceData.reduce((sum, member) => sum + (member.revenue || 0), 0) : 0)}
                   </dd>
                 </dl>
               </div>
@@ -210,7 +209,7 @@ export default function TeamPerformance() {
                 <dl>
                   <dt className="text-sm font-medium text-gray-500 truncate">Total Calls</dt>
                   <dd className="text-lg font-medium text-gray-900">
-                    {performanceData.reduce((sum, member) => sum + (member.calls || 0), 0)}
+                    {performanceData ? performanceData.reduce((sum, member) => sum + (member.calls || 0), 0) : 0}
                   </dd>
                 </dl>
               </div>
@@ -228,7 +227,7 @@ export default function TeamPerformance() {
                 <dl>
                   <dt className="text-sm font-medium text-gray-500 truncate">Conversion Rate</dt>
                   <dd className="text-lg font-medium text-gray-900">
-                    {performanceData.length > 0 
+                    {performanceData && performanceData.length > 0 
                       ? `${(performanceData.reduce((sum, member) => sum + (member.conversionRate || 0), 0) / performanceData.length).toFixed(1)}%`
                       : '0%'
                     }
@@ -243,13 +242,13 @@ export default function TeamPerformance() {
           <div className="p-5">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <TrendingUpIcon className="h-6 w-6 text-gray-400" aria-hidden="true" />
+                <ChartBarIcon className="h-6 w-6 text-gray-400" aria-hidden="true" />
               </div>
               <div className="ml-5 w-0 flex-1">
                 <dl>
                   <dt className="text-sm font-medium text-gray-500 truncate">Team Performance</dt>
                   <dd className="text-lg font-medium text-gray-900">
-                    {performanceData.length > 0 
+                    {performanceData && performanceData.length > 0 
                       ? `${(performanceData.reduce((sum, member) => sum + (member.performanceScore || 0), 0) / performanceData.length).toFixed(1)}/100`
                       : '0/100'
                     }

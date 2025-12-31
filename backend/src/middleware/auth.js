@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Company = require('../models/Company');
+const { hasPermission } = require('../utils/permissions');
 
 // Protect routes - verify JWT token
 const protect = async (req, res, next) => {
@@ -23,8 +24,8 @@ const protect = async (req, res, next) => {
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Get user from the token with company data
-    req.user = await User.findById(decoded.id).populate('companyId');
+    // Get user from the token
+    req.user = await User.findById(decoded.id);
 
     // Check if account is locked
     if (req.user.lockUntil && req.user.lockUntil > Date.now()) {
@@ -35,11 +36,11 @@ const protect = async (req, res, next) => {
       });
     }
     
-    // Check if user is active and company is active
-    if (!req.user.isActive || !req.user.companyId.isActive) {
+    // Check if user is active
+    if (!req.user.isActive) {
       return res.status(401).json({
         success: false,
-        message: 'Account or company is not active'
+        message: 'Account is not active'
       });
     }
 
@@ -66,6 +67,26 @@ const authorize = (...roles) => {
       return res.status(403).json({
         success: false,
         message: `User role ${req.user.role} is not authorized to access this route`
+      });
+    }
+    next();
+  };
+};
+
+// Check specific permissions
+const checkPermission = (permission) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Not authorized to access this route'
+      });
+    }
+
+    if (!hasPermission(req.user.role, permission)) {
+      return res.status(403).json({
+        success: false,
+        message: `User role ${req.user.role} does not have ${permission} permission`
       });
     }
     next();
@@ -121,4 +142,4 @@ const refreshToken = async (req, res) => {
   }
 };
 
-module.exports = { protect, authorize, refreshToken };
+module.exports = { protect, authorize, checkPermission, refreshToken };

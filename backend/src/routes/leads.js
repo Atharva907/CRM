@@ -4,7 +4,8 @@ const { body, query } = require('express-validator');
 const Lead = require('../models/Lead');
 const Customer = require('../models/Customer');
 const ActivityLog = require('../models/ActivityLog');
-const { protect, authorize } = require('../middleware/auth');
+const { protect, authorize, checkPermission } = require('../middleware/auth');
+const { hasPermission } = require('../utils/permissions');
 const { handleValidationErrors, validateObjectId } = require('../middleware/validation');
 const { catchAsync } = require('../middleware/error');
 
@@ -34,10 +35,12 @@ router.get('/',
       query.assignedTo = req.query.assignedTo;
     }
     
-    // Non-admin and non-manager users can only see their own leads
-    if (req.user.role === 'executive') {
+    // Role-based filtering
+    if (!hasPermission(req.user.role, 'canViewAllLeads')) {
+      // Users who can't view all leads only see their own
       query.assignedTo = req.user.id;
     }
+    // Users with canViewAllLeads permission can see all leads
     
     // Pagination
     const page = parseInt(req.query.page, 10) || 1;
@@ -75,9 +78,9 @@ router.get('/',
 router.get('/kanban', 
   protect,
   catchAsync(async (req, res) => {
-    // Build query based on user role
+    // Build query based on user permissions
     const query = {};
-    if (req.user.role === 'executive') {
+    if (!hasPermission(req.user.role, 'canViewAllLeads')) {
       query.assignedTo = req.user.id;
     }
     
@@ -157,10 +160,10 @@ router.post('/',
     const { name, email, phone, company, position, source, status, assignedTo, priority, notes, tags, lastContactDate, nextFollowUpDate } = req.body;
     
     // Check if assigned user exists and is valid
-    if (req.user.role === 'executive' && assignedTo !== req.user.id) {
+    if (!hasPermission(req.user.role, 'canViewAllLeads') && assignedTo !== req.user.id) {
       return res.status(403).json({
         success: false,
-        message: 'Executives can only assign leads to themselves'
+        message: 'You can only assign leads to yourself'
       });
     }
     
@@ -186,6 +189,7 @@ router.post('/',
     
     // Log activity
     await ActivityLog.create({
+      companyId: typeof req.user.companyId === 'object' ? req.user.companyId._id : req.user.companyId,
       user: req.user.id,
       action: 'create',
       resourceType: 'Lead',
@@ -243,10 +247,10 @@ router.put('/:id',
     const { name, email, phone, company, position, source, status, assignedTo, priority, notes, tags, lastContactDate, nextFollowUpDate } = req.body;
     
     // Check if assignedTo is valid
-    if (assignedTo && req.user.role === 'executive' && assignedTo !== req.user.id) {
+    if (assignedTo && !hasPermission(req.user.role, 'canViewAllLeads') && assignedTo !== req.user.id) {
       return res.status(403).json({
         success: false,
-        message: 'Executives can only assign leads to themselves'
+        message: 'You can only assign leads to yourself'
       });
     }
     
@@ -273,6 +277,7 @@ router.put('/:id',
     
     // Log activity
     await ActivityLog.create({
+      companyId: typeof req.user.companyId === 'object' ? req.user.companyId._id : req.user.companyId,
       user: req.user.id,
       action: 'update',
       resourceType: 'Lead',
@@ -320,6 +325,7 @@ router.delete('/:id',
     
     // Log activity
     await ActivityLog.create({
+      companyId: typeof req.user.companyId === 'object' ? req.user.companyId._id : req.user.companyId,
       user: req.user.id,
       action: 'delete',
       resourceType: 'Lead',
@@ -406,6 +412,7 @@ router.post('/:id/convert',
     
     // Log activity
     await ActivityLog.create({
+      companyId: typeof req.user.companyId === 'object' ? req.user.companyId._id : req.user.companyId,
       user: req.user.id,
       action: 'convert',
       resourceType: 'Lead',

@@ -128,17 +128,29 @@ export const AuthProvider = ({ children }) => {
       dispatch({ type: AUTH_ACTIONS.LOGIN_START });
 
       const response = await api.post('/auth/login', { email, password });
-      
       if (!response.ok) {
-        const errorData = await response.json();
+        let errorMessage = 'Login failed';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch (e) {
+          // If response is not JSON, use status text
+          errorMessage = response.statusText || errorMessage;
+        }
+        
         dispatch({
           type: AUTH_ACTIONS.LOGIN_FAILURE,
-          payload: errorData.message || 'Login failed',
+          payload: errorMessage,
         });
-        return { success: false, message: errorData.message || 'Login failed' };
+        return { success: false, message: errorMessage };
       }
       
       const data = await response.json();
+      
+      // Check if response contains expected data
+      if (!data.accessToken || !data.refreshToken) {
+        throw new Error('Invalid response from server');
+      }
 
       // Store tokens
       authUtils.setAuthTokens(data.accessToken, data.refreshToken);
@@ -159,11 +171,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Register function
-  const register = async (name, email, password, role, company) => {
+  const register = async (name, email, password, role) => {
     try {
       dispatch({ type: AUTH_ACTIONS.REGISTER_START });
 
-      const response = await api.post('/auth/register', { name, email, password, role, company });
+      const response = await api.post('/auth/register', { name, email, password, role });
       
       if (!response.ok) {
         const errorData = await response.json();

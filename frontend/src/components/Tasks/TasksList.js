@@ -81,12 +81,13 @@ export default function TasksList() {
       if (searchTerm) params.append('search', searchTerm);
 
       const response = await api.get(`/tasks?${params.toString()}`);
+      const data = await response.json();
 
-      setTasks(response.data.tasks);
+      setTasks(data.data || []);
       setPagination({
-        currentPage: response.data.currentPage,
-        totalPages: response.data.totalPages,
-        total: response.data.total
+        currentPage: data.pagination?.page || 1,
+        totalPages: data.pagination?.pages || 1,
+        total: data.pagination?.total || 0
       });
       setLoading(false);
     } catch (error) {
@@ -104,9 +105,13 @@ export default function TasksList() {
         api.get('/deals?limit=100')
       ]);
 
-      setLeads(leadsRes.data.leads);
-      setCustomers(customersRes.data.customers);
-      setDeals(dealsRes.data.deals);
+      const leadsData = await leadsRes.json();
+      const customersData = await customersRes.json();
+      const dealsData = await dealsRes.json();
+
+      setLeads(leadsData.data || []);
+      setCustomers(customersData.data || []);
+      setDeals(dealsData.data || []);
     } catch (error) {
       console.error('Error fetching related data:', error);
     }

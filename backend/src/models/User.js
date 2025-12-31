@@ -29,11 +29,6 @@ const UserSchema = new mongoose.Schema({
       message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
     }
   },
-  companyId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Company',
-    required: [true, 'Please provide a company ID']
-  },
   role: {
     type: String,
     enum: ['admin', 'manager', 'sales', 'support'],
@@ -77,8 +72,8 @@ const UserSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Compound index to ensure email is unique within each company
-UserSchema.index({ email: 1, companyId: 1 }, { unique: true });
+// Index to ensure email is unique
+UserSchema.index({ email: 1 }, { unique: true });
 
 // Hash password before saving
 UserSchema.pre('save', async function(next) {
@@ -98,11 +93,7 @@ UserSchema.pre('save', async function(next) {
 
 // Compare password method
 UserSchema.methods.comparePassword = async function(candidatePassword) {
-  console.log('Comparing passwords:');
-  console.log('Candidate password:', candidatePassword);
-  console.log('Hashed password exists:', !!this.password);
   const result = await bcrypt.compare(candidatePassword, this.password);
-  console.log('Comparison result:', result);
   return result;
 };
 

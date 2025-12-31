@@ -47,6 +47,8 @@ const refreshAccessToken = async () => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ refreshToken }),
+      // Fix SSL error in development
+      agent: false,
     });
 
     const data = await response.json();
@@ -62,10 +64,12 @@ const refreshAccessToken = async () => {
 
     return data.accessToken;
   } catch (error) {
-    // If refresh fails, remove tokens and redirect to login
-    removeAuthTokens();
-    if (typeof window !== 'undefined') {
-      window.location.href = '/login';
+    // Only remove tokens and redirect if refresh token is completely invalid
+    // This ensures users stay logged in unless tokens are completely invalid
+    if (error.message === 'No refresh token available' || 
+        error.message === 'Failed to refresh token' ||
+        error.message === 'Invalid refresh token') {
+      removeAuthTokens();
     }
     throw error;
   }
@@ -91,10 +95,13 @@ const apiRequest = async (url, options = {}) => {
   let response = await fetch(`${API_URL}${url}`, {
     ...options,
     headers,
+    // Fix SSL error in development
+    agent: false,
   });
 
   // If unauthorized, try to refresh token and retry once
-  if (response.status === 401) {
+  // Skip token refresh for login and register endpoints
+  if (response.status === 401 && !url.includes('/auth/login') && !url.includes('/auth/register')) {
     try {
       token = await refreshAccessToken();
       headers.Authorization = `Bearer ${token}`;
@@ -103,8 +110,18 @@ const apiRequest = async (url, options = {}) => {
       response = await fetch(`${API_URL}${url}`, {
         ...options,
         headers,
+        // Fix SSL error in development
+        agent: false,
       });
     } catch (error) {
+      // Only redirect to login if refresh token is invalid
+      // This ensures users stay logged in unless tokens are completely invalid
+      if (error.message === 'No refresh token available' || 
+          error.message === 'Failed to refresh token') {
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
+      }
       throw error;
     }
   }

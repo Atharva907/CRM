@@ -40,7 +40,18 @@ export default function ReportsDashboard() {
   const [reportType, setReportType] = useState('overview');
   const [dateRange, setDateRange] = useState('30days');
   const [reportsData, setReportsData] = useState({
-    overview: {},
+    overview: {
+      totalLeads: 0,
+      leadsGrowth: 0,
+      totalCustomers: 0,
+      customersGrowth: 0,
+      totalDeals: 0,
+      dealsGrowth: 0,
+      totalRevenue: 0,
+      revenueGrowth: 0,
+      conversionRate: 0,
+      conversionGrowth: 0
+    },
     leads: {},
     customers: {},
     deals: {},
@@ -96,6 +107,11 @@ export default function ReportsDashboard() {
     return new Date(dateString).toLocaleDateString();
   };
 
+  // Helper function to safely access overview properties
+  const getOverviewProp = (overview, prop, defaultValue = 0) => {
+    return overview && overview[prop] !== undefined ? overview[prop] : defaultValue;
+  };
+
   const renderOverviewReport = () => {
     const { overview } = reportsData;
     
@@ -113,18 +129,18 @@ export default function ReportsDashboard() {
                   <dl>
                     <dt className="text-sm font-medium text-gray-500 truncate">Total Leads</dt>
                     <dd className="flex items-baseline">
-                      <div className="text-2xl font-semibold text-gray-900">{overview.totalLeads || 0}</div>
-                      {overview.leadsGrowth >= 0 ? (
+                      <div className="text-2xl font-semibold text-gray-900">{getOverviewProp(overview, 'totalLeads')}</div>
+                      {getOverviewProp(overview, 'leadsGrowth') >= 0 ? (
                         <div className="ml-2 flex items-center text-sm text-green-600">
                           <ArrowTrendingUpIcon className="self-center flex-shrink-0 h-5 w-5 text-green-500" aria-hidden="true" />
                           <span className="sr-only">Increased by</span>
-                          {overview.leadsGrowth}%
+                          {getOverviewProp(overview, 'leadsGrowth')}%
                         </div>
                       ) : (
                         <div className="ml-2 flex items-center text-sm text-red-600">
                           <ArrowTrendingDownIcon className="self-center flex-shrink-0 h-5 w-5 text-red-500" aria-hidden="true" />
                           <span className="sr-only">Decreased by</span>
-                          {Math.abs(overview.leadsGrowth)}%
+                          {Math.abs(getOverviewProp(overview, 'leadsGrowth'))}%
                         </div>
                       )}
                     </dd>
@@ -144,18 +160,18 @@ export default function ReportsDashboard() {
                   <dl>
                     <dt className="text-sm font-medium text-gray-500 truncate">Total Customers</dt>
                     <dd className="flex items-baseline">
-                      <div className="text-2xl font-semibold text-gray-900">{overview.totalCustomers || 0}</div>
-                      {overview.customersGrowth >= 0 ? (
+                      <div className="text-2xl font-semibold text-gray-900">{getOverviewProp(overview, 'totalCustomers')}</div>
+                      {getOverviewProp(overview, 'customersGrowth') >= 0 ? (
                         <div className="ml-2 flex items-center text-sm text-green-600">
                           <ArrowTrendingUpIcon className="self-center flex-shrink-0 h-5 w-5 text-green-500" aria-hidden="true" />
                           <span className="sr-only">Increased by</span>
-                          {overview.customersGrowth}%
+                          {getOverviewProp(overview, 'customersGrowth')}%
                         </div>
                       ) : (
                         <div className="ml-2 flex items-center text-sm text-red-600">
                           <ArrowTrendingDownIcon className="self-center flex-shrink-0 h-5 w-5 text-red-500" aria-hidden="true" />
                           <span className="sr-only">Decreased by</span>
-                          {Math.abs(overview.customersGrowth)}%
+                          {Math.abs(getOverviewProp(overview, 'customersGrowth'))}%
                         </div>
                       )}
                     </dd>
@@ -175,18 +191,18 @@ export default function ReportsDashboard() {
                   <dl>
                     <dt className="text-sm font-medium text-gray-500 truncate">Total Deal Value</dt>
                     <dd className="flex items-baseline">
-                      <div className="text-2xl font-semibold text-gray-900">{formatCurrency(overview.totalDealValue || 0)}</div>
-                      {overview.dealsGrowth >= 0 ? (
+                      <div className="text-2xl font-semibold text-gray-900">{formatCurrency(getOverviewProp(overview, 'totalDealValue'))}</div>
+                      {getOverviewProp(overview, 'dealsGrowth') >= 0 ? (
                         <div className="ml-2 flex items-center text-sm text-green-600">
                           <ArrowTrendingUpIcon className="self-center flex-shrink-0 h-5 w-5 text-green-500" aria-hidden="true" />
                           <span className="sr-only">Increased by</span>
-                          {overview.dealsGrowth}%
+                          {getOverviewProp(overview, 'dealsGrowth')}%
                         </div>
                       ) : (
                         <div className="ml-2 flex items-center text-sm text-red-600">
                           <ArrowTrendingDownIcon className="self-center flex-shrink-0 h-5 w-5 text-red-500" aria-hidden="true" />
                           <span className="sr-only">Decreased by</span>
-                          {Math.abs(overview.dealsGrowth)}%
+                          {Math.abs(getOverviewProp(overview, 'dealsGrowth'))}%
                         </div>
                       )}
                     </dd>
@@ -206,18 +222,18 @@ export default function ReportsDashboard() {
                   <dl>
                     <dt className="text-sm font-medium text-gray-500 truncate">Tasks Completed</dt>
                     <dd className="flex items-baseline">
-                      <div className="text-2xl font-semibold text-gray-900">{overview.tasksCompleted || 0}</div>
-                      {overview.tasksGrowth >= 0 ? (
+                      <div className="text-2xl font-semibold text-gray-900">{getOverviewProp(overview, 'tasksCompleted')}</div>
+                      {getOverviewProp(overview, 'tasksGrowth') >= 0 ? (
                         <div className="ml-2 flex items-center text-sm text-green-600">
                           <ArrowTrendingUpIcon className="self-center flex-shrink-0 h-5 w-5 text-green-500" aria-hidden="true" />
                           <span className="sr-only">Increased by</span>
-                          {overview.tasksGrowth}%
+                          {getOverviewProp(overview, 'tasksGrowth')}%
                         </div>
                       ) : (
                         <div className="ml-2 flex items-center text-sm text-red-600">
                           <ArrowTrendingDownIcon className="self-center flex-shrink-0 h-5 w-5 text-red-500" aria-hidden="true" />
                           <span className="sr-only">Decreased by</span>
-                          {Math.abs(overview.tasksGrowth)}%
+                          {Math.abs(getOverviewProp(overview, 'tasksGrowth'))}%
                         </div>
                       )}
                     </dd>
@@ -235,10 +251,10 @@ export default function ReportsDashboard() {
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
                 data={[
-                  { name: 'Leads', value: overview.totalLeads || 0 },
-                  { name: 'Customers', value: overview.totalCustomers || 0 },
-                  { name: 'Deals', value: overview.totalDealValue ? overview.totalDealValue / 1000 : 0 },
-                  { name: 'Tasks', value: overview.tasksCompleted || 0 }
+                  { name: 'Leads', value: getOverviewProp(overview, 'totalLeads') },
+                  { name: 'Customers', value: getOverviewProp(overview, 'totalCustomers') },
+                  { name: 'Deals', value: getOverviewProp(overview, 'totalDealValue') / 1000 },
+                  { name: 'Tasks', value: getOverviewProp(overview, 'tasksCompleted') }
                 ]}
                 margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
               >

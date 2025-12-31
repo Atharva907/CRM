@@ -57,7 +57,7 @@ const LeadsKanban = () => {
       setLoading(true);
       const response = await api.get('/leads/kanban');
       const data = await response.json();
-      setLeadsData(data.data);
+      setLeadsData(data.data || []);
     } catch (error) {
       toast.error('Failed to fetch leads');
       console.error('Error fetching leads:', error);
@@ -161,7 +161,7 @@ const LeadsKanban = () => {
         </div>
       ) : (
         <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-          {leadsData.map((column) => (
+          {leadsData && leadsData.map((column) => (
             <div key={column.status} className="bg-gray-50 rounded-lg p-4">
               <h3 className="text-sm font-medium text-gray-900 mb-4">
                 {leadStatuses.find((s) => s.id === column.status)?.title}
@@ -273,7 +273,7 @@ const LeadsKanban = () => {
                         required
                         value={newLead.name}
                         onChange={handleInputChange}
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
                       />
                     </div>
 
@@ -287,7 +287,7 @@ const LeadsKanban = () => {
                         id="email"
                         value={newLead.email}
                         onChange={handleInputChange}
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
                       />
                     </div>
 
@@ -301,7 +301,7 @@ const LeadsKanban = () => {
                         id="phone"
                         value={newLead.phone}
                         onChange={handleInputChange}
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
                       />
                     </div>
 
@@ -315,7 +315,7 @@ const LeadsKanban = () => {
                         id="company"
                         value={newLead.company}
                         onChange={handleInputChange}
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
                       />
                     </div>
 
@@ -329,7 +329,7 @@ const LeadsKanban = () => {
                         id="position"
                         value={newLead.position}
                         onChange={handleInputChange}
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
                       />
                     </div>
 
@@ -342,7 +342,7 @@ const LeadsKanban = () => {
                         id="source"
                         value={newLead.source}
                         onChange={handleInputChange}
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
                       >
                         <option value="website">Website</option>
                         <option value="referral">Referral</option>
@@ -363,7 +363,7 @@ const LeadsKanban = () => {
                         id="status"
                         value={newLead.status}
                         onChange={handleInputChange}
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
                       >
                         {leadStatuses.map((status) => (
                           <option key={status.id} value={status.id}>
@@ -382,7 +382,7 @@ const LeadsKanban = () => {
                         id="priority"
                         value={newLead.priority}
                         onChange={handleInputChange}
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
                       >
                         <option value="low">Low</option>
                         <option value="medium">Medium</option>
@@ -400,7 +400,7 @@ const LeadsKanban = () => {
                         rows={3}
                         value={newLead.notes}
                         onChange={handleInputChange}
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
                       />
                     </div>
                   </div>
@@ -544,7 +544,7 @@ const LeadsKanban = () => {
                           id="status-update"
                           value={selectedLead.status}
                           onChange={(e) => updateLeadStatus(selectedLead._id, e.target.value)}
-                          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
                         >
                           {leadStatuses.map((status) => (
                             <option key={status.id} value={status.id}>

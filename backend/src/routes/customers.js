@@ -22,9 +22,7 @@ router.get('/',
   handleValidationErrors,
   catchAsync(async (req, res) => {
     // Build query
-    const query = {
-      companyId: typeof req.user.companyId === 'object' ? req.user.companyId._id : req.user.companyId
-    };
+    const query = {};
     
     // Filter by assigned user if provided
     if (req.query.assignedTo) {
@@ -36,10 +34,18 @@ router.get('/',
       query.isActive = req.query.isActive === 'true';
     }
     
-    // Non-admin and non-manager users can only see their own customers
-    if (req.user.role === 'executive') {
+    // Role-based filtering
+    if (req.user.role === 'sales') {
+      // Sales users can only see customers assigned to them
       query.assignedTo = req.user.id;
+    } else if (req.user.role === 'manager') {
+      // Managers can see customers assigned to users in their department
+      const User = require('../models/User');
+      const usersInDepartment = await User.find({ department: req.user.department }).select('_id');
+      const userIds = usersInDepartment.map(user => user._id);
+      query.assignedTo = { $in: userIds };
     }
+    // Admins can see all customers (no additional filtering needed)
     
     // Pagination
     const page = parseInt(req.query.page, 10) || 1;
@@ -153,8 +159,7 @@ router.post('/',
       source: source || 'other',
       assignedTo: assignedTo || req.user.id,
       tags,
-      leadId,
-      companyId: typeof req.user.companyId === 'object' ? req.user.companyId._id : req.user.companyId
+      leadId
     });
     
     // Populate fields for response

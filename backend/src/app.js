@@ -81,6 +81,7 @@ app.use('/api/deals', require('./routes/deals'));
 app.use('/api/tasks', require('./routes/tasks'));
 app.use('/api/reports', require('./routes/reports'));
 app.use('/api/performance', require('./routes/performance'));
+app.use('/api/admin', require('./routes/admin'));
 
 // Error handling middleware
 const { globalErrorHandler } = require('./middleware/error');

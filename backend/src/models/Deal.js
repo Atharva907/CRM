@@ -27,6 +27,12 @@ const DealSchema = new mongoose.Schema({
     enum: ['prospecting', 'qualification', 'proposal', 'negotiation', 'closed_won', 'closed_lost'],
     default: 'prospecting'
   },
+  probability: {
+    type: Number,
+    default: 10,
+    min: 0,
+    max: 100
+  },
   status: {
     type: String,
     enum: ['active', 'inactive', 'pending'],
