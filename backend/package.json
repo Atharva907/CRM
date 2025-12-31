@@ -6,6 +6,12 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
+    "seed": "node src/seed.js",
+    "seed-all": "node src/seedAll.js",
+    "seed-customers": "node src/seedCustomers.js",
+    "seed-deals": "node src/seedDeals.js",
+    "list-users": "node src/listUsers.js",
+    "delete-user": "node src/deleteUser.js",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "format": "prettier --write \"src/**/*.js\""

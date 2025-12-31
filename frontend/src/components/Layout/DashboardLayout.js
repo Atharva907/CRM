@@ -55,7 +55,7 @@ const DashboardLayout = ({ children }) => {
 
       {/* Static sidebar for desktop */}
       <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0">
-        <SidebarContent />
+        <SidebarContent logout={logout} />
       </div>
 
       {/* Main content */}
@@ -94,13 +94,11 @@ const DashboardLayout = ({ children }) => {
                 <div className="flex items-center">
                   <button
                     type="button"
-                    className="max-w-xs bg-white flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                     onClick={handleLogout}
                   >
-                    <span className="sr-only">Open user menu</span>
-                    <span className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                      Logout
-                    </span>
+                    <ArrowRightOnRectangleIcon className="h-5 w-5 mr-2" />
+                    Logout
                   </button>
                 </div>
               </div>
@@ -125,7 +123,7 @@ const DashboardLayout = ({ children }) => {
   );
 };
 
-const SidebarContent = () => {
+const SidebarContent = ({ logout }) => {
   const { user } = useAuth();
   const router = useRouter();
 
@@ -160,7 +158,7 @@ const SidebarContent = () => {
         </nav>
       </div>
       <div className="flex-shrink-0 flex border-t border-indigo-800 p-4">
-        <div className="flex items-center">
+        <div className="flex items-center w-full">
           <div className="flex-shrink-0">
             <div className="h-8 w-8 rounded-full bg-indigo-500 flex items-center justify-center">
               <span className="text-white font-medium">
@@ -168,12 +166,19 @@ const SidebarContent = () => {
               </span>
             </div>
           </div>
-          <div className="ml-3">
+          <div className="ml-3 flex-1">
             <p className="text-sm font-medium text-white">{user?.name}</p>
             <p className="text-xs font-medium text-indigo-300 capitalize">
               {user?.role}
             </p>
           </div>
+          <button
+            type="button"
+            className="flex-shrink-0 p-1 rounded-full text-indigo-200 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-indigo-700 focus:ring-white"
+            onClick={logout}
+          >
+            <ArrowRightOnRectangleIcon className="h-5 w-5" aria-hidden="true" />
+          </button>
         </div>
       </div>
     </div>

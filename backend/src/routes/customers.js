@@ -22,7 +22,9 @@ router.get('/',
   handleValidationErrors,
   catchAsync(async (req, res) => {
     // Build query
-    const query = {};
+    const query = {
+      companyId: typeof req.user.companyId === 'object' ? req.user.companyId._id : req.user.companyId
+    };
     
     // Filter by assigned user if provided
     if (req.query.assignedTo) {
@@ -151,7 +153,8 @@ router.post('/',
       source: source || 'other',
       assignedTo: assignedTo || req.user.id,
       tags,
-      leadId
+      leadId,
+      companyId: typeof req.user.companyId === 'object' ? req.user.companyId._id : req.user.companyId
     });
     
     // Populate fields for response

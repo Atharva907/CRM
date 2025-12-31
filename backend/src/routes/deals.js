@@ -10,7 +10,10 @@ const { validationResult } = require('express-validator');
 router.get('/', protect, async (req, res) => {
   try {
     const { page = 1, limit = 10, stage, search } = req.query;
-    const query = { assignedTo: req.user.id };
+    const query = { 
+      companyId: typeof req.user.companyId === 'object' ? req.user.companyId._id : req.user.companyId,
+      assignedTo: req.user.id 
+    };
     
     // Filter by stage if provided
     if (stage) {
@@ -34,10 +37,14 @@ router.get('/', protect, async (req, res) => {
     const total = await Deal.countDocuments(query);
     
     res.json({
-      deals,
-      totalPages: Math.ceil(total / limit),
-      currentPage: page,
-      total
+      success: true,
+      data: deals,
+      pagination: {
+        totalPages: Math.ceil(total / limit),
+        currentPage: parseInt(page),
+        total,
+        limit: parseInt(limit)
+      }
     });
   } catch (err) {
     console.error(err.message);
@@ -90,6 +97,7 @@ router.post('/', protect, async (req, res) => {
       stage,
       customerId,
       expectedCloseDate,
+      companyId: typeof req.user.companyId === 'object' ? req.user.companyId._id : req.user.companyId,
       assignedTo: req.user.id
     });
     

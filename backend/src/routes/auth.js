@@ -23,11 +23,12 @@ router.post('/register',
     body('name').notEmpty().withMessage('Name is required'),
     body('email').isEmail().withMessage('Please provide a valid email'),
     body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
-    body('role').optional().isIn(['admin', 'manager', 'executive']).withMessage('Invalid role')
+    body('role').optional().isIn(['admin', 'manager', 'sales', 'support']).withMessage('Invalid role'),
+    body('company').notEmpty().withMessage('Company name is required')
   ],
   handleValidationErrors,
   catchAsync(async (req, res) => {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, company } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -38,13 +39,34 @@ router.post('/register',
       });
     }
 
+    // Create a new company if it doesn't exist
+    const Company = require('../models/Company');
+    let companyDoc = await Company.findOne({ name: company });
+    
+    if (!companyDoc) {
+      // Generate a domain from the company name
+      const domain = company.toLowerCase().replace(/[^a-z0-9]/g, '') + '.crm';
+      
+      companyDoc = await Company.create({
+        name: company,
+        domain: domain,
+        createdBy: null // Will be updated with the user ID after creation
+      });
+    }
+    
     // Create user
     const user = await User.create({
       name,
       email,
       password,
-      role: role || 'executive' // Default role
+      companyId: companyDoc._id,
+      role: role || 'admin' // First user in a company is admin by default
     });
+    
+    // Update company with the user ID if this is a new company
+    if (!companyDoc.createdBy) {
+      await Company.findByIdAndUpdate(companyDoc._id, { createdBy: user._id });
+    }
 
     // Create token
     const accessToken = jwt.sign(
@@ -61,6 +83,7 @@ router.post('/register',
 
     // Log activity
     await ActivityLog.create({
+      companyId: typeof user.companyId === 'object' ? user.companyId._id : user.companyId,
       user: user._id,
       action: 'register',
       resourceType: 'User',
@@ -102,8 +125,12 @@ router.post('/login',
 
     // Check for user
     const user = await User.findOne({ email }).select('+password');
+    
+    console.log('Login attempt for email:', email);
+    console.log('User found:', !!user);
 
     if (!user) {
+      console.log('User not found in database');
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials'
@@ -111,7 +138,9 @@ router.post('/login',
     }
 
     // Check if password matches
+    console.log('Comparing password for user:', email);
     const isMatch = await user.comparePassword(password);
+    console.log('Password match:', isMatch);
 
     if (!isMatch) {
       // Increment login attempts
@@ -160,6 +189,7 @@ router.post('/login',
 
     // Log activity
     await ActivityLog.create({
+      companyId: typeof user.companyId === 'object' ? user.companyId._id : user.companyId,
       user: user._id,
       action: 'login',
       resourceType: 'User',
@@ -247,6 +277,7 @@ router.get('/me', protect, catchAsync(async (req, res) => {
 router.post('/logout', protect, catchAsync(async (req, res) => {
   // Log activity
   await ActivityLog.create({
+    companyId: typeof req.user.companyId === 'object' ? req.user.companyId._id : req.user.companyId,
     user: req.user.id,
     action: 'logout',
     resourceType: 'User',

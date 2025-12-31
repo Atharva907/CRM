@@ -105,6 +105,9 @@ export default function Login() {
                     placeholder="••••••••"
                   />
                 </div>
+                <p className="mt-1 text-xs text-gray-500">
+                  Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.
+                </p>
               </div>
 
               <div className="flex items-center justify-between">

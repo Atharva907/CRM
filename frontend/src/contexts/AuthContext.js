@@ -128,6 +128,16 @@ export const AuthProvider = ({ children }) => {
       dispatch({ type: AUTH_ACTIONS.LOGIN_START });
 
       const response = await api.post('/auth/login', { email, password });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        dispatch({
+          type: AUTH_ACTIONS.LOGIN_FAILURE,
+          payload: errorData.message || 'Login failed',
+        });
+        return { success: false, message: errorData.message || 'Login failed' };
+      }
+      
       const data = await response.json();
 
       // Store tokens
@@ -149,11 +159,21 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Register function
-  const register = async (name, email, password, role) => {
+  const register = async (name, email, password, role, company) => {
     try {
       dispatch({ type: AUTH_ACTIONS.REGISTER_START });
 
-      const response = await api.post('/auth/register', { name, email, password, role });
+      const response = await api.post('/auth/register', { name, email, password, role, company });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        dispatch({
+          type: AUTH_ACTIONS.REGISTER_FAILURE,
+          payload: errorData.message || 'Registration failed',
+        });
+        return { success: false, message: errorData.message || 'Registration failed' };
+      }
+      
       const data = await response.json();
 
       // Store tokens
