@@ -39,7 +39,7 @@ export default function TasksList() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [currentTask, setCurrentTask] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
-  
+
   // Form states
   const [formData, setFormData] = useState({
     title: '',
@@ -51,7 +51,7 @@ export default function TasksList() {
     relatedToCustomerId: '',
     relatedToDealId: ''
   });
-  
+
   const [leads, setLeads] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [deals, setDeals] = useState([]);
@@ -75,13 +75,13 @@ export default function TasksList() {
         page: pagination.currentPage,
         limit: 10
       });
-      
+
       if (filterStatus) params.append('status', filterStatus);
       if (filterPriority) params.append('priority', filterPriority);
       if (searchTerm) params.append('search', searchTerm);
-      
+
       const response = await api.get(`/tasks?${params.toString()}`);
-      
+
       setTasks(response.data.tasks);
       setPagination({
         currentPage: response.data.currentPage,
@@ -103,7 +103,7 @@ export default function TasksList() {
         api.get('/customers?limit=100'),
         api.get('/deals?limit=100')
       ]);
-      
+
       setLeads(leadsRes.data.leads);
       setCustomers(customersRes.data.customers);
       setDeals(dealsRes.data.deals);
@@ -114,7 +114,7 @@ export default function TasksList() {
 
   const handleCreateTask = async (e) => {
     e.preventDefault();
-    
+
     try {
       const response = await api.post('/tasks', formData);
       setTasks([response.data, ...tasks]);
@@ -129,14 +129,14 @@ export default function TasksList() {
 
   const handleUpdateTask = async (e) => {
     e.preventDefault();
-    
+
     try {
       const response = await api.put(`/tasks/${currentTask._id}`, formData);
-      
+
       setTasks(tasks.map(task => 
         task._id === currentTask._id ? response.data : task
       ));
-      
+
       setShowEditModal(false);
       resetForm();
       setCurrentTask(null);
@@ -315,7 +315,7 @@ export default function TasksList() {
                 ))}
               </select>
             </div>
-            
+
             <div>
               <label htmlFor="priority-filter" className="block text-sm font-medium text-gray-700 mb-1">
                 Priority
@@ -334,7 +334,7 @@ export default function TasksList() {
                 ))}
               </select>
             </div>
-            
+
             <button
               type="button"
               onClick={clearFilters}
@@ -411,7 +411,7 @@ export default function TasksList() {
                               )}
                             </div>
                           )}
-                          
+
                           {task.relatedToLeadId && (
                             <div className="flex items-center">
                               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -419,7 +419,7 @@ export default function TasksList() {
                               </span>
                             </div>
                           )}
-                          
+
                           {task.relatedToCustomerId && (
                             <div className="flex items-center">
                               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -427,7 +427,7 @@ export default function TasksList() {
                               </span>
                             </div>
                           )}
-                          
+
                           {task.relatedToDealId && (
                             <div className="flex items-center">
                               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
@@ -448,7 +448,7 @@ export default function TasksList() {
                           <CheckCircleIcon className="h-5 w-5" aria-hidden="true" />
                         </button>
                       )}
-                      
+
                       <button
                         type="button"
                         onClick={() => openEditModal(task)}
@@ -456,7 +456,7 @@ export default function TasksList() {
                       >
                         Edit
                       </button>
-                      
+
                       <button
                         type="button"
                         onClick={() => handleDeleteTask(task._id)}
@@ -533,7 +533,7 @@ export default function TasksList() {
                         required
                       />
                     </div>
-                    
+
                     <div>
                       <label htmlFor="description" className="block text-sm font-medium text-gray-700">
                         Description
@@ -546,7 +546,7 @@ export default function TasksList() {
                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                       />
                     </div>
-                    
+
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label htmlFor="dueDate" className="block text-sm font-medium text-gray-700">
@@ -560,7 +560,7 @@ export default function TasksList() {
                           onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
                         />
                       </div>
-                      
+
                       <div>
                         <label htmlFor="priority" className="block text-sm font-medium text-gray-700">
                           Priority
@@ -579,7 +579,7 @@ export default function TasksList() {
                         </select>
                       </div>
                     </div>
-                    
+
                     <div>
                       <label htmlFor="status" className="block text-sm font-medium text-gray-700">
                         Status
@@ -597,7 +597,7 @@ export default function TasksList() {
                         ))}
                       </select>
                     </div>
-                    
+
                     <div className="grid grid-cols-3 gap-4">
                       <div>
                         <label htmlFor="relatedToLeadId" className="block text-sm font-medium text-gray-700">
@@ -617,7 +617,7 @@ export default function TasksList() {
                           ))}
                         </select>
                       </div>
-                      
+
                       <div>
                         <label htmlFor="relatedToCustomerId" className="block text-sm font-medium text-gray-700">
                           Related Customer
@@ -636,7 +636,7 @@ export default function TasksList() {
                           ))}
                         </select>
                       </div>
-                      
+
                       <div>
                         <label htmlFor="relatedToDealId" className="block text-sm font-medium text-gray-700">
                           Related Deal
@@ -710,7 +710,7 @@ export default function TasksList() {
                         required
                       />
                     </div>
-                    
+
                     <div>
                       <label htmlFor="edit-description" className="block text-sm font-medium text-gray-700">
                         Description
@@ -723,7 +723,7 @@ export default function TasksList() {
                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                       />
                     </div>
-                    
+
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label htmlFor="edit-dueDate" className="block text-sm font-medium text-gray-700">
@@ -737,7 +737,7 @@ export default function TasksList() {
                           onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
                         />
                       </div>
-                      
+
                       <div>
                         <label htmlFor="edit-priority" className="block text-sm font-medium text-gray-700">
                           Priority
@@ -756,7 +756,7 @@ export default function TasksList() {
                         </select>
                       </div>
                     </div>
-                    
+
                     <div>
                       <label htmlFor="edit-status" className="block text-sm font-medium text-gray-700">
                         Status
@@ -764,74 +764,73 @@ export default function TasksList() {
                       <select
                         id="edit-status"
                         className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                          value={formData.status}
-                          onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                        value={formData.status}
+                        onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                      >
+                        {statusOptions.map((status) => (
+                          <option key={status.id} value={status.id}>
+                            {status.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <label htmlFor="edit-relatedToLeadId" className="block text-sm font-medium text-gray-700">
+                          Related Lead
+                        </label>
+                        <select
+                          id="edit-relatedToLeadId"
+                          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                          value={formData.relatedToLeadId}
+                          onChange={(e) => setFormData({ ...formData, relatedToLeadId: e.target.value })}
                         >
-                          {statusOptions.map((status) => (
-                            <option key={status.id} value={status.id}>
-                              {status.name}
+                          <option value="">None</option>
+                          {leads.map((lead) => (
+                            <option key={lead._id} value={lead._id}>
+                              {lead.name}
                             </option>
                           ))}
                         </select>
                       </div>
-                      
-                      <div className="grid grid-cols-3 gap-4">
-                        <div>
-                          <label htmlFor="edit-relatedToLeadId" className="block text-sm font-medium text-gray-700">
-                            Related Lead
-                          </label>
-                          <select
-                            id="edit-relatedToLeadId"
-                            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                            value={formData.relatedToLeadId}
-                            onChange={(e) => setFormData({ ...formData, relatedToLeadId: e.target.value })}
-                          >
-                            <option value="">None</option>
-                            {leads.map((lead) => (
-                              <option key={lead._id} value={lead._id}>
-                                {lead.name}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        
-                        <div>
-                          <label htmlFor="edit-relatedToCustomerId" className="block text-sm font-medium text-gray-700">
-                            Related Customer
-                          </label>
-                          <select
-                            id="edit-relatedToCustomerId"
-                            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                            value={formData.relatedToCustomerId}
-                            onChange={(e) => setFormData({ ...formData, relatedToCustomerId: e.target.value })}
-                          >
-                            <option value="">None</option>
-                            {customers.map((customer) => (
-                              <option key={customer._id} value={customer._id}>
-                                {customer.name}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        
-                        <div>
-                          <label htmlFor="edit-relatedToDealId" className="block text-sm font-medium text-gray-700">
-                            Related Deal
-                          </label>
-                          <select
-                            id="edit-relatedToDealId"
-                            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                            value={formData.relatedToDealId}
-                            onChange={(e) => setFormData({ ...formData, relatedToDealId: e.target.value })}
-                          >
-                            <option value="">None</option>
-                            {deals.map((deal) => (
-                              <option key={deal._id} value={deal._id}>
-                                {deal.title}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
+
+                      <div>
+                        <label htmlFor="edit-relatedToCustomerId" className="block text-sm font-medium text-gray-700">
+                          Related Customer
+                        </label>
+                        <select
+                          id="edit-relatedToCustomerId"
+                          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                          value={formData.relatedToCustomerId}
+                          onChange={(e) => setFormData({ ...formData, relatedToCustomerId: e.target.value })}
+                        >
+                          <option value="">None</option>
+                          {customers.map((customer) => (
+                            <option key={customer._id} value={customer._id}>
+                              {customer.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label htmlFor="edit-relatedToDealId" className="block text-sm font-medium text-gray-700">
+                          Related Deal
+                        </label>
+                        <select
+                          id="edit-relatedToDealId"
+                          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                          value={formData.relatedToDealId}
+                          onChange={(e) => setFormData({ ...formData, relatedToDealId: e.target.value })}
+                        >
+                          <option value="">None</option>
+                          {deals.map((deal) => (
+                            <option key={deal._id} value={deal._id}>
+                              {deal.title}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                     </div>
                   </div>
