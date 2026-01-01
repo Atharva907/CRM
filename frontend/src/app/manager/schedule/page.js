@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { api } from '../../../utils/api';
 import { useAuth } from '../../../contexts/AuthContext';
 import {
@@ -52,7 +52,7 @@ export default function TeamSchedule() {
     }
   }, [isAuthenticated, currentDate, filterMember]);
 
-  const fetchSchedule = async () => {
+  const fetchSchedule = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
@@ -69,7 +69,7 @@ export default function TeamSchedule() {
       toast.error('Failed to fetch schedule');
       setLoading(false);
     }
-  };
+  }, [currentDate, filterMember, viewMode]);
 
   const fetchTeamMembers = async () => {
     try {
@@ -236,7 +236,7 @@ export default function TeamSchedule() {
       <div className="sm:flex sm:items-center sm:justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Team Schedule</h1>
-          <p className="mt-1 text-sm text-gray-500">View and manage your team's schedule</p>
+          <p className="mt-1 text-sm text-gray-500">View and manage your team&apos;s schedule</p>
         </div>
 
         <div className="mt-4 sm:mt-0 flex items-center space-x-2">

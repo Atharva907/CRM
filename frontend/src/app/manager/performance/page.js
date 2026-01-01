@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import { api } from '../../../utils/api';
 import { useAuth } from '../../../contexts/AuthContext';
 import {
@@ -37,9 +38,9 @@ export default function TeamPerformance() {
       fetchPerformanceData();
       fetchTeamMembers();
     }
-  }, [isAuthenticated, timeRange, filterMember]);
+  }, [isAuthenticated, timeRange, filterMember, fetchPerformanceData]);
 
-  const fetchPerformanceData = async () => {
+  const fetchPerformanceData = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
@@ -55,7 +56,7 @@ export default function TeamPerformance() {
       toast.error('Failed to fetch performance data');
       setLoading(false);
     }
-  };
+  }, [filterMember, timeRange]);
 
   const fetchTeamMembers = async () => {
     try {
@@ -113,7 +114,7 @@ export default function TeamPerformance() {
       <div className="sm:flex sm:items-center sm:justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Team Performance</h1>
-          <p className="mt-1 text-sm text-gray-500">Track and analyze your team's performance metrics</p>
+          <p className="mt-1 text-sm text-gray-500">Track and analyze your team&apos;s performance metrics</p>
         </div>
       </div>
 
@@ -305,7 +306,7 @@ export default function TeamPerformance() {
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
                           {member.avatar ? (
-                            <img className="h-10 w-10 rounded-full" src={member.avatar} alt="" />
+                            <Image className="h-10 w-10 rounded-full" src={member.avatar} alt="" width={40} height={40} />
                           ) : (
                             <div className="h-10 w-10 rounded-full bg-indigo-500 flex items-center justify-center">
                               <span className="text-white font-medium">
@@ -388,7 +389,7 @@ export default function TeamPerformance() {
                     <div className="flex items-center mb-6">
                       <div className="flex-shrink-0 h-12 w-12">
                         {selectedMember.avatar ? (
-                          <img className="h-12 w-12 rounded-full" src={selectedMember.avatar} alt="" />
+                          <Image className="h-12 w-12 rounded-full" src={selectedMember.avatar} alt="" width={48} height={48} />
                         ) : (
                           <div className="h-12 w-12 rounded-full bg-indigo-500 flex items-center justify-center">
                             <span className="text-white font-medium text-lg">

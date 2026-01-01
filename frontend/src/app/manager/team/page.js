@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import { api } from '../../../utils/api';
 import { useAuth } from '../../../contexts/AuthContext';
 import {
@@ -61,7 +62,7 @@ export default function TeamManagement() {
     }
   }, [isAuthenticated, filterRole, filterStatus, searchTerm]);
 
-  const fetchTeamMembers = async () => {
+  const fetchTeamMembers = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
@@ -78,7 +79,7 @@ export default function TeamManagement() {
       toast.error('Failed to fetch team members');
       setLoading(false);
     }
-  };
+  }, [filterRole, filterStatus, searchTerm]);
 
   const handleAddMember = async (e) => {
     e.preventDefault();
@@ -315,7 +316,7 @@ export default function TeamManagement() {
                     <div className="flex items-center">
                       <div className="flex-shrink-0">
                         {member.avatar ? (
-                          <img className="h-12 w-12 rounded-full" src={member.avatar} alt="" />
+                          <Image className="h-12 w-12 rounded-full" src={member.avatar} alt="" width={48} height={48} />
                         ) : (
                           <div className="h-12 w-12 rounded-full bg-indigo-500 flex items-center justify-center">
                             <span className="text-white font-medium">

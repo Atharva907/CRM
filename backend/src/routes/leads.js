@@ -167,6 +167,32 @@ router.post('/',
       });
     }
     
+    // Get or create default company
+    const Company = require('../models/Company');
+    let companyId = req.user.companyId;
+    
+    if (!companyId) {
+      // Check if default company exists
+      let defaultCompany = await Company.findOne({ domain: 'default-company.crm' });
+      
+      if (!defaultCompany) {
+        // Create default company if it doesn't exist
+        defaultCompany = await Company.create({
+          name: 'Default Company',
+          domain: 'default-company.crm',
+          address: {
+            street: '',
+            city: '',
+            state: '',
+            zip: '',
+            country: ''
+          }
+        });
+      }
+      
+      companyId = defaultCompany._id;
+    }
+    
     // Create lead
     const lead = await Lead.create({
       name,
@@ -177,6 +203,7 @@ router.post('/',
       source: source || 'other',
       status: status || 'new',
       assignedTo: assignedTo || req.user.id,
+      companyId,
       priority: priority || 'medium',
       notes,
       tags,

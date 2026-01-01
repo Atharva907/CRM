@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { api } from '../../utils/api';
 import { useAuth } from '../../contexts/AuthContext';
 import {
@@ -66,7 +66,7 @@ export default function DealsList() {
     }
   }, [isAuthenticated, pagination.currentPage, filterStage, searchTerm]);
 
-  const fetchDeals = async () => {
+  const fetchDeals = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
@@ -92,7 +92,7 @@ export default function DealsList() {
       toast.error('Failed to fetch deals');
       setLoading(false);
     }
-  };
+  }, [pagination.currentPage, filterStage, searchTerm]);
 
   const fetchCustomers = async () => {
     try {

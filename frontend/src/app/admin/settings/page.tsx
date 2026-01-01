@@ -54,7 +54,7 @@ const SystemConfiguration = () => {
   });
 
   // Fetch settings
-  const fetchSettings = async () => {
+  const fetchSettings = async (): Promise<void> => {
     try {
       setLoading(true);
       const response = await api.get('/admin/settings');
@@ -77,8 +77,10 @@ const SystemConfiguration = () => {
   }, []);
 
   // Handle form input changes
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const target = e.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+    const { name, value, type } = target;
+    const checked = type === 'checkbox' ? (target as HTMLInputElement).checked : undefined;
     setSettings(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
@@ -86,7 +88,7 @@ const SystemConfiguration = () => {
   };
 
   // Handle save settings
-  const handleSaveSettings = async (e) => {
+  const handleSaveSettings = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     try {
       setSaving(true);
@@ -107,7 +109,7 @@ const SystemConfiguration = () => {
   };
 
   // Test email configuration
-  const handleTestEmail = async () => {
+  const handleTestEmail = async (): Promise<void> => {
     try {
       const response = await api.post('/admin/settings/test-email');
       const data = await response.json();
@@ -124,7 +126,7 @@ const SystemConfiguration = () => {
   };
 
   // Create backup
-  const handleCreateBackup = async () => {
+  const handleCreateBackup = async (): Promise<void> => {
     try {
       const response = await api.post('/admin/settings/backup');
       const data = await response.json();

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { api } from '../../utils/api';
 import { useAuth } from '../../contexts/AuthContext';
 import {
@@ -61,15 +61,9 @@ export default function TasksList() {
     total: 0
   });
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchTasks();
-      fetchRelatedData();
-    }
-  }, [isAuthenticated, pagination.currentPage, filterStatus, filterPriority, searchTerm]);
-
-  const fetchTasks = async () => {
+  const fetchTasks = useCallback(async () => {
     try {
+      console.log('Fetching tasks with authentication state:', isAuthenticated);
       setLoading(true);
       const params = new URLSearchParams({
         page: pagination.currentPage,
@@ -80,22 +74,34 @@ export default function TasksList() {
       if (filterPriority) params.append('priority', filterPriority);
       if (searchTerm) params.append('search', searchTerm);
 
-      const response = await api.get(`/tasks?${params.toString()}`);
+      const requestUrl = `/tasks?${params.toString()}`;
+      console.log('Making API request to:', requestUrl);
+      const response = await api.get(requestUrl);
       const data = await response.json();
 
-      setTasks(data.data || []);
+      setTasks(data.tasks || []);
       setPagination({
-        currentPage: data.pagination?.page || 1,
-        totalPages: data.pagination?.pages || 1,
-        total: data.pagination?.total || 0
+        currentPage: data.currentPage || 1,
+        totalPages: data.totalPages || 1,
+        total: data.total || 0
       });
       setLoading(false);
     } catch (error) {
       console.error('Error fetching tasks:', error);
-      toast.error('Failed to fetch tasks');
+      console.error('Error response:', error.response);
+      console.error('Error status:', error.status);
+      console.error('Error message:', error.message);
+      toast.error(`Failed to fetch tasks: ${error.message || 'Unknown error'}`);
       setLoading(false);
     }
-  };
+  }, [isAuthenticated, pagination.currentPage, filterStatus, filterPriority, searchTerm]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchTasks();
+      fetchRelatedData();
+    }
+  }, [isAuthenticated, fetchTasks]);
 
   const fetchRelatedData = async () => {
     try {

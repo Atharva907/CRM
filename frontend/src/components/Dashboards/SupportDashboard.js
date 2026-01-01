@@ -27,7 +27,7 @@ const SupportDashboard = ({ user }) => {
     <div>
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-gray-900">Welcome back, {user?.name}</h2>
-        <p className="mt-1 text-sm text-gray-600">Here's what's happening with your support tickets today.</p>
+        <p className="mt-1 text-sm text-gray-600">Here&apos;s what&apos;s happening with your support tickets today.</p>
       </div>
 
       {/* Stats */}

@@ -79,6 +79,7 @@ const refreshAccessToken = async () => {
 const apiRequest = async (url, options = {}) => {
   // Get access token
   let token = getAuthToken();
+  console.log('API request to:', url, 'with token:', token ? 'present' : 'missing');
 
   // Set up headers
   const headers = {
@@ -119,11 +120,22 @@ const apiRequest = async (url, options = {}) => {
       if (error.message === 'No refresh token available' || 
           error.message === 'Failed to refresh token') {
         if (typeof window !== 'undefined') {
-          window.location.href = '/login';
+          // Use setTimeout to ensure this runs after the current execution stack
+          setTimeout(() => {
+            window.location.href = '/login';
+          }, 0);
         }
       }
       throw error;
     }
+  }
+
+  // Handle non-2xx responses
+  if (!response.ok) {
+    const error = new Error(`HTTP error! status: ${response.status}`);
+    error.status = response.status;
+    error.response = response;
+    throw error;
   }
 
   return response;

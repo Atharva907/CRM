@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { api } from '../../../utils/api';
 import { useAuth } from '../../../contexts/AuthContext';
 import {
@@ -49,9 +49,9 @@ export default function LeadAssignments() {
       fetchTeamMembers();
       fetchUnassignedLeads();
     }
-  }, [isAuthenticated, filterMember, filterStatus, searchTerm]);
+  }, [isAuthenticated, filterMember, filterStatus, searchTerm, fetchAssignments]);
 
-  const fetchAssignments = async () => {
+  const fetchAssignments = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
@@ -68,7 +68,7 @@ export default function LeadAssignments() {
       toast.error('Failed to fetch assignments');
       setLoading(false);
     }
-  };
+  }, [filterMember, filterStatus, searchTerm]);
 
   const fetchTeamMembers = async () => {
     try {

@@ -32,12 +32,12 @@ const priorities = {
 };
 
 const LeadsKanban = () => {
-  const { user } = useAuth();
   const [leadsData, setLeadsData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showLeadModal, setShowLeadModal] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
+  const { user } = useAuth();
   const [newLead, setNewLead] = useState({
     name: '',
     email: '',
@@ -49,6 +49,7 @@ const LeadsKanban = () => {
     priority: 'medium',
     notes: '',
     tags: [],
+    assignedTo: user?.id || '',
   });
 
   // Fetch leads data
@@ -76,7 +77,14 @@ const LeadsKanban = () => {
   const handleAddLead = async (e) => {
     e.preventDefault();
     try {
-      const response = await api.post('/leads', newLead);
+      // Always set assignedTo to current user if empty
+      const leadData = {
+        ...newLead,
+        assignedTo: newLead.assignedTo || user.id,
+        // Backend will handle default companyId if not provided
+      };
+      
+      const response = await api.post('/leads', leadData);
       const data = await response.json();
 
       if (data.success) {
@@ -93,6 +101,7 @@ const LeadsKanban = () => {
           priority: 'medium',
           notes: '',
           tags: [],
+          assignedTo: user?.id || '',
         });
         fetchLeads();
       } else {
@@ -387,6 +396,22 @@ const LeadsKanban = () => {
                         <option value="low">Low</option>
                         <option value="medium">Medium</option>
                         <option value="high">High</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label htmlFor="assignedTo" className="block text-sm font-medium text-gray-700">
+                        Assign To
+                      </label>
+                      <select
+                        name="assignedTo"
+                        id="assignedTo"
+                        value={newLead.assignedTo}
+                        onChange={handleInputChange}
+                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
+                      >
+                        <option value="">-- Select User --</option>
+                        <option value={user.id}>{user.name} (Me)</option>
                       </select>
                     </div>
 

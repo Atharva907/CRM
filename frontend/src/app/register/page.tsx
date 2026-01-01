@@ -21,11 +21,11 @@ export default function Register() {
 
   const { name, email, password, confirmPassword, company, role } = formData;
 
-  const onChange = (e) => {
+  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const onSubmit = async (e) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (password !== confirmPassword) {
@@ -58,7 +58,8 @@ export default function Register() {
         toast.error(result.message || 'Registration failed');
       }
     } catch (error) {
-      toast.error(error.message || 'Registration failed');
+      const errorMessage = error instanceof Error ? error.message : 'Registration failed';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

@@ -14,16 +14,26 @@ import {
   MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline';
 
+// Define User interface
+interface User {
+  _id: string;
+  name: string;
+  email: string;
+  role: string;
+  isActive: boolean;
+  password?: string;
+}
+
 const UserManagement = () => {
   const { user } = useAuth();
   const router = useRouter();
-  const [users, setUsers] = useState([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   // Form states
   const [formData, setFormData] = useState({
@@ -63,7 +73,7 @@ const UserManagement = () => {
   }, [user, router]);
 
   // Handle form input changes
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -72,7 +82,7 @@ const UserManagement = () => {
   };
 
   // Handle create user
-  const handleCreateUser = async (e) => {
+  const handleCreateUser = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
       const response = await api.post('/admin/users', formData);
@@ -93,9 +103,12 @@ const UserManagement = () => {
   };
 
   // Handle update user
-  const handleUpdateUser = async (e) => {
+  const handleUpdateUser = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
+      if (!selectedUser) {
+        throw new Error('No user selected for update');
+      }
       const response = await api.put(`/admin/users/${selectedUser._id}`, formData);
       const data = await response.json();
 
@@ -117,6 +130,9 @@ const UserManagement = () => {
   // Handle delete user
   const handleDeleteUser = async () => {
     try {
+      if (!selectedUser) {
+        throw new Error('No user selected for deletion');
+      }
       const response = await api.delete(`/admin/users/${selectedUser._id}`);
       const data = await response.json();
 
@@ -135,7 +151,7 @@ const UserManagement = () => {
   };
 
   // Open edit modal with user data
-  const openEditModal = (user) => {
+  const openEditModal = (user: User) => {
     setSelectedUser(user);
     setFormData({
       name: user.name,
@@ -147,7 +163,7 @@ const UserManagement = () => {
   };
 
   // Open delete modal
-  const openDeleteModal = (user) => {
+  const openDeleteModal = (user: User) => {
     setSelectedUser(user);
     setShowDeleteModal(true);
   };
@@ -307,7 +323,7 @@ const UserManagement = () => {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="5" className="px-6 py-4 text-center text-sm text-gray-500">
+                        <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">
                           No users found
                         </td>
                       </tr>

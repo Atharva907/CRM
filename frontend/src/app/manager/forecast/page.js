@@ -1,14 +1,14 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { api } from '../../../utils/api';
 import { useAuth } from '../../../contexts/AuthContext';
 import {
   FunnelIcon,
   XMarkIcon,
   CurrencyDollarIcon,
-  TrendingUpIcon,
-  TrendingDownIcon,
+  ArrowTrendingUpIcon as TrendingUpIcon,
+  ArrowTrendingDownIcon as TrendingDownIcon,
   CalendarIcon,
   ChartBarIcon
 } from '@heroicons/react/24/outline';
@@ -36,9 +36,9 @@ export default function SalesForecast() {
       fetchForecastData();
       fetchTeamMembers();
     }
-  }, [isAuthenticated, timeRange, filterMember]);
+  }, [isAuthenticated, timeRange, filterMember, fetchForecastData]);
 
-  const fetchForecastData = async () => {
+  const fetchForecastData = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
@@ -54,7 +54,7 @@ export default function SalesForecast() {
       toast.error('Failed to fetch forecast data');
       setLoading(false);
     }
-  };
+  }, [filterMember, timeRange]);
 
   const fetchTeamMembers = async () => {
     try {

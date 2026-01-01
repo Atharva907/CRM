@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { api } from '../../utils/api';
 import { useAuth } from '../../contexts/AuthContext';
 import {
@@ -53,7 +53,7 @@ const CustomersList = () => {
   });
 
   // Fetch customers
-  const fetchCustomers = async (page = 1, search = '') => {
+  const fetchCustomers = useCallback(async (page = 1, search = '') => {
     try {
       setLoading(true);
       const response = await api.get(`/customers?page=${page}&limit=${pagination.limit}&search=${search}`);
@@ -67,7 +67,7 @@ const CustomersList = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [pagination.limit]);
 
   // Handle form input changes
   const handleInputChange = (e) => {
@@ -227,7 +227,7 @@ const CustomersList = () => {
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [searchTerm]);
+  }, [searchTerm, fetchCustomers]);
 
   return (
     <div className="px-4 sm:px-6 lg:px-8 py-6">

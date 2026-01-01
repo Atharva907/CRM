@@ -22,9 +22,9 @@ export default function Setup() {
   
   const { companyName, companyDomain, adminName, adminEmail, adminPassword, confirmPassword } = formData;
   
-  const onChange = e => setFormData({ ...formData, [e.target.name]: e.target.value });
+  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, [e.target.name]: e.target.value });
   
-  const onSubmit = async e => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validate passwords match
@@ -59,7 +59,10 @@ export default function Setup() {
       }, 2000);
     } catch (error) {
       console.error('Setup error:', error);
-      toast.error(error.response?.data?.msg || 'Setup failed');
+      const errorMessage = error && typeof error === 'object' && 'response' in error 
+        ? (error as any).response?.data?.msg || 'Setup failed' 
+        : 'Setup failed';
+      toast.error(errorMessage);
       setIsSubmitting(false);
     }
   };
