@@ -28,6 +28,9 @@ const ROLE_PERMISSIONS = {
     canAssignTasks: true,
     canApproveDeals: true,
     canDeleteAnyData: true,
+    canConvertLeads: true,
+    canConvertAllLeads: true,
+    canUpdateAllLeads: true,
   },
   manager: {
     // Navigation access
@@ -57,6 +60,9 @@ const ROLE_PERMISSIONS = {
     canAssignTasks: true,
     canApproveDeals: true,
     canDeleteAnyData: false,
+    canConvertLeads: true,
+    canConvertAllLeads: true,
+    canUpdateAllLeads: true,
   },
   sales: {
     // Navigation access
@@ -86,6 +92,7 @@ const ROLE_PERMISSIONS = {
     canAssignTasks: false,
     canApproveDeals: false,
     canDeleteAnyData: false,
+    canConvertLeads: true,
   },
   support: {
     // Navigation access
@@ -115,6 +122,7 @@ const ROLE_PERMISSIONS = {
     canAssignTasks: false,
     canApproveDeals: false,
     canDeleteAnyData: false,
+    canConvertLeads: true,
   },
 };
 

@@ -87,38 +87,29 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
-  // Load user from token on initial render
+  // Load user on initial render using cookies
   useEffect(() => {
     const loadUser = async () => {
-      const token = authUtils.getAuthToken();
-
-      if (!token) {
-        dispatch({
-          type: AUTH_ACTIONS.LOAD_USER_FAILURE,
-          payload: 'No token found',
-        });
-        return;
-      }
-
       try {
         dispatch({ type: AUTH_ACTIONS.LOAD_USER_START });
-
         const response = await api.get('/auth/me');
         const data = await response.json();
-
-        dispatch({
-          type: AUTH_ACTIONS.LOAD_USER_SUCCESS,
-          payload: { user: data.data },
-        });
+        dispatch({ type: AUTH_ACTIONS.LOAD_USER_SUCCESS, payload: { user: { ...data.data, id: data.data._id || data.data.id } } });
       } catch (error) {
-        dispatch({
-          type: AUTH_ACTIONS.LOAD_USER_FAILURE,
-          payload: error.message,
-        });
-        authUtils.removeAuthTokens();
+        if (error.status === 401) {
+          try {
+            await authUtils.refreshAccessToken();
+            const response = await api.get('/auth/me');
+            const data = await response.json();
+            dispatch({ type: AUTH_ACTIONS.LOAD_USER_SUCCESS, payload: { user: { ...data.data, id: data.data._id || data.data.id } } });
+            return;
+          } catch (refreshError) {
+            // fall through to unauthenticated state
+          }
+        }
+        dispatch({ type: AUTH_ACTIONS.LOAD_USER_FAILURE, payload: 'Unauthenticated' });
       }
     };
-
     loadUser();
   }, []);
 
@@ -126,46 +117,18 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       dispatch({ type: AUTH_ACTIONS.LOGIN_START });
-
       const response = await api.post('/auth/login', { email, password });
       if (!response.ok) {
-        let errorMessage = 'Login failed';
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.message || errorMessage;
-        } catch (e) {
-          // If response is not JSON, use status text
-          errorMessage = response.statusText || errorMessage;
-        }
-        
-        dispatch({
-          type: AUTH_ACTIONS.LOGIN_FAILURE,
-          payload: errorMessage,
-        });
-        return { success: false, message: errorMessage };
+        const errorData = await response.json().catch(() => ({}));
+        const msg = errorData.message || 'Login failed';
+        dispatch({ type: AUTH_ACTIONS.LOGIN_FAILURE, payload: msg });
+        return { success: false, message: msg };
       }
-      
       const data = await response.json();
-      
-      // Check if response contains expected data
-      if (!data.accessToken || !data.refreshToken) {
-        throw new Error('Invalid response from server');
-      }
-
-      // Store tokens
-      authUtils.setAuthTokens(data.accessToken, data.refreshToken);
-
-      dispatch({
-        type: AUTH_ACTIONS.LOGIN_SUCCESS,
-        payload: { user: data.user },
-      });
-
+      dispatch({ type: AUTH_ACTIONS.LOGIN_SUCCESS, payload: { user: data.user } });
       return { success: true };
     } catch (error) {
-      dispatch({
-        type: AUTH_ACTIONS.LOGIN_FAILURE,
-        payload: error.message,
-      });
+      dispatch({ type: AUTH_ACTIONS.LOGIN_FAILURE, payload: error.message });
       return { success: false, message: error.message };
     }
   };
@@ -174,34 +137,18 @@ export const AuthProvider = ({ children }) => {
   const register = async (name, email, password, role) => {
     try {
       dispatch({ type: AUTH_ACTIONS.REGISTER_START });
-
       const response = await api.post('/auth/register', { name, email, password, role });
-      
       if (!response.ok) {
-        const errorData = await response.json();
-        dispatch({
-          type: AUTH_ACTIONS.REGISTER_FAILURE,
-          payload: errorData.message || 'Registration failed',
-        });
-        return { success: false, message: errorData.message || 'Registration failed' };
+        const errorData = await response.json().catch(() => ({}));
+        const msg = errorData.message || 'Registration failed';
+        dispatch({ type: AUTH_ACTIONS.REGISTER_FAILURE, payload: msg });
+        return { success: false, message: msg };
       }
-      
       const data = await response.json();
-
-      // Store tokens
-      authUtils.setAuthTokens(data.accessToken, data.refreshToken);
-
-      dispatch({
-        type: AUTH_ACTIONS.REGISTER_SUCCESS,
-        payload: { user: data.user },
-      });
-
+      dispatch({ type: AUTH_ACTIONS.REGISTER_SUCCESS, payload: { user: data.user } });
       return { success: true };
     } catch (error) {
-      dispatch({
-        type: AUTH_ACTIONS.REGISTER_FAILURE,
-        payload: error.message,
-      });
+      dispatch({ type: AUTH_ACTIONS.REGISTER_FAILURE, payload: error.message });
       return { success: false, message: error.message };
     }
   };
@@ -211,9 +158,8 @@ export const AuthProvider = ({ children }) => {
     try {
       await api.post('/auth/logout');
     } catch (error) {
-      console.error('Logout error:', error);
+      // ignore
     } finally {
-      authUtils.removeAuthTokens();
       dispatch({ type: AUTH_ACTIONS.LOGOUT });
     }
   };

@@ -6,12 +6,12 @@ import DashboardLayout from '../../components/Layout/DashboardLayout';
 import ReportsDashboard from '../../components/Reports/ReportsDashboard';
 
 export default function Reports() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
   const router = useRouter();
 
-  // Redirect to login if not authenticated
+  if (loading) return null;
   if (!isAuthenticated) {
-    router.push('/login');
+    router.replace('/login');
     return null;
   }
 

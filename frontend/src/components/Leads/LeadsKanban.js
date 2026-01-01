@@ -20,7 +20,7 @@ const leadStatuses = [
   { id: 'new', title: 'New', color: 'bg-gray-100 text-gray-800' },
   { id: 'contacted', title: 'Contacted', color: 'bg-blue-100 text-blue-800' },
   { id: 'follow_up', title: 'Follow-up', color: 'bg-yellow-100 text-yellow-800' },
-  { id: 'interested', title: 'Interested', color: 'bg-purple-100 text-purple-800' },
+  { id: 'qualified', title: 'Qualified', color: 'bg-purple-100 text-purple-800' },
   { id: 'converted', title: 'Converted', color: 'bg-green-100 text-green-800' },
   { id: 'lost', title: 'Lost', color: 'bg-red-100 text-red-800' },
 ];
@@ -37,6 +37,8 @@ const LeadsKanban = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showLeadModal, setShowLeadModal] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editLead, setEditLead] = useState(null);
   const { user } = useAuth();
   const [newLead, setNewLead] = useState({
     name: '',
@@ -49,7 +51,7 @@ const LeadsKanban = () => {
     priority: 'medium',
     notes: '',
     tags: [],
-    assignedTo: user?.id || '',
+    assignedTo: user?.id || user?._id || '',
   });
 
   // Fetch leads data
@@ -80,7 +82,7 @@ const LeadsKanban = () => {
       // Always set assignedTo to current user if empty
       const leadData = {
         ...newLead,
-        assignedTo: newLead.assignedTo || user.id,
+        assignedTo: newLead.assignedTo || user?.id || user?._id,
         // Backend will handle default companyId if not provided
       };
       
@@ -101,7 +103,7 @@ const LeadsKanban = () => {
           priority: 'medium',
           notes: '',
           tags: [],
-          assignedTo: user?.id || '',
+          assignedTo: user?.id || user?._id || '',
         });
         fetchLeads();
       } else {
@@ -117,12 +119,21 @@ const LeadsKanban = () => {
   const updateLeadStatus = async (leadId, newStatus) => {
     try {
       const response = await api.put(`/leads/${leadId}`, { status: newStatus });
-      const data = await response.json();
 
-      if (data.success) {
+      if (response.ok) {
         toast.success('Lead status updated successfully');
+        
+        // Update the selected lead in the modal
+        if (selectedLead && selectedLead._id === leadId) {
+          setSelectedLead({
+            ...selectedLead,
+            status: newStatus
+          });
+        }
+        
         fetchLeads();
       } else {
+        const data = await response.json();
         toast.error(data.message || 'Failed to update lead status');
       }
     } catch (error) {
@@ -131,9 +142,77 @@ const LeadsKanban = () => {
     }
   };
 
+  const startEdit = () => {
+    if (!selectedLead) return;
+    setEditLead({
+      name: selectedLead.name || '',
+      email: selectedLead.email || '',
+      phone: selectedLead.phone || '',
+      company: selectedLead.company || '',
+      position: selectedLead.position || '',
+      source: selectedLead.source || 'other',
+      priority: selectedLead.priority || 'medium',
+      notes: selectedLead.notes || '',
+    });
+    setIsEditing(true);
+  };
+
+  const cancelEdit = () => {
+    setIsEditing(false);
+    setEditLead(null);
+  };
+
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditLead((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const saveEdit = async () => {
+    try {
+      const response = await api.put(`/leads/${selectedLead._id}`, editLead);
+      if (response.ok) {
+        const data = await response.json();
+        toast.success('Lead updated successfully');
+        setSelectedLead(data.data);
+        setIsEditing(false);
+        setEditLead(null);
+        fetchLeads();
+      } else {
+        const data = await response.json();
+        toast.error(data.message || 'Failed to update lead');
+      }
+    } catch (error) {
+      toast.error('Failed to update lead');
+      console.error('Error updating lead:', error);
+    }
+  };
+
+  const deleteCurrentLead = async () => {
+    if (!confirm('Are you sure you want to delete this lead? This action cannot be undone.')) return;
+    try {
+      const response = await api.delete(`/leads/${selectedLead._id}`);
+      if (response.ok) {
+        toast.success('Lead deleted successfully');
+        setShowLeadModal(false);
+        setSelectedLead(null);
+        setIsEditing(false);
+        setEditLead(null);
+        fetchLeads();
+      } else {
+        const data = await response.json();
+        toast.error(data.message || 'Failed to delete lead');
+      }
+    } catch (error) {
+      toast.error('Failed to delete lead');
+      console.error('Error deleting lead:', error);
+    }
+  };
+
   // View lead details
   const viewLead = (lead) => {
     setSelectedLead(lead);
+    setIsEditing(false);
+    setEditLead(null);
     setShowLeadModal(true);
   };
 
@@ -411,7 +490,7 @@ const LeadsKanban = () => {
                         className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
                       >
                         <option value="">-- Select User --</option>
-                        <option value={user.id}>{user.name} (Me)</option>
+                        <option value={user.id || user._id}>{user.name} (Me)</option>
                       </select>
                     </div>
 
@@ -560,7 +639,7 @@ const LeadsKanban = () => {
                   </div>
 
                   <div className="border-t border-gray-200 pt-4">
-                    <div className="flex justify-between">
+                    <div className="flex justify-between items-start">
                       <div>
                         <label htmlFor="status-update" className="block text-sm font-medium text-gray-700">
                           Update Status
@@ -578,22 +657,163 @@ const LeadsKanban = () => {
                           ))}
                         </select>
                       </div>
-
-                      {selectedLead.status !== 'converted' && (
+                      <div className="flex items-center space-x-2">
+                        {selectedLead.status !== 'converted' && (
+                          <button
+                            type="button"
+                            className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                            onClick={async () => {
+                              try {
+                                const response = await api.post(`/leads/${selectedLead._id}/convert`);
+                                if (response.ok) {
+                                  toast.success('Lead converted to customer');
+                                  setShowLeadModal(false);
+                                  fetchLeads();
+                                } else {
+                                  const data = await response.json();
+                                  toast.error(data.message || 'Failed to convert lead to customer');
+                                }
+                              } catch (error) {
+                                toast.error('Failed to convert lead to customer');
+                                console.error('Error converting lead to customer:', error);
+                              }
+                            }}
+                          >
+                            Convert to Customer
+                          </button>
+                        )}
+                        {!isEditing ? (
+                          <button
+                            type="button"
+                            className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                            onClick={startEdit}
+                          >
+                            Edit
+                          </button>
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                              onClick={saveEdit}
+                            >
+                              Save
+                            </button>
+                            <button
+                              type="button"
+                              className="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                              onClick={cancelEdit}
+                            >
+                              Cancel
+                            </button>
+                          </>
+                        )}
                         <button
                           type="button"
-                          className="ml-4 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                          onClick={() => {
-                            // Handle convert to customer
-                            toast.success('Lead converted to customer');
-                            setShowLeadModal(false);
-                            fetchLeads();
-                          }}
+                          className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                          onClick={deleteCurrentLead}
                         >
-                          Convert to Customer
+                          Delete
                         </button>
-                      )}
+                      </div>
                     </div>
+
+                    {isEditing && (
+                      <div className="mt-4 border-t border-gray-200 pt-4">
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Name</label>
+                            <input
+                              type="text"
+                              name="name"
+                              value={editLead?.name || ''}
+                              onChange={handleEditChange}
+                              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Email</label>
+                            <input
+                              type="email"
+                              name="email"
+                              value={editLead?.email || ''}
+                              onChange={handleEditChange}
+                              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Phone</label>
+                            <input
+                              type="tel"
+                              name="phone"
+                              value={editLead?.phone || ''}
+                              onChange={handleEditChange}
+                              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Company</label>
+                            <input
+                              type="text"
+                              name="company"
+                              value={editLead?.company || ''}
+                              onChange={handleEditChange}
+                              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Position</label>
+                            <input
+                              type="text"
+                              name="position"
+                              value={editLead?.position || ''}
+                              onChange={handleEditChange}
+                              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Source</label>
+                            <select
+                              name="source"
+                              value={editLead?.source || 'other'}
+                              onChange={handleEditChange}
+                              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
+                            >
+                              <option value="website">Website</option>
+                              <option value="referral">Referral</option>
+                              <option value="social_media">Social Media</option>
+                              <option value="email">Email</option>
+                              <option value="phone">Phone</option>
+                              <option value="advertisement">Advertisement</option>
+                              <option value="other">Other</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Priority</label>
+                            <select
+                              name="priority"
+                              value={editLead?.priority || 'medium'}
+                              onChange={handleEditChange}
+                              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
+                            >
+                              <option value="low">Low</option>
+                              <option value="medium">Medium</option>
+                              <option value="high">High</option>
+                            </select>
+                          </div>
+                          <div className="sm:col-span-2">
+                            <label className="block text-sm font-medium text-gray-700">Notes</label>
+                            <textarea
+                              name="notes"
+                              rows={3}
+                              value={editLead?.notes || ''}
+                              onChange={handleEditChange}
+                              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-gray-900"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

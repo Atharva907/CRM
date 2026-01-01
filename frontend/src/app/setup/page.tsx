@@ -55,7 +55,7 @@ export default function Setup() {
       
       // Redirect to login after a short delay
       setTimeout(() => {
-        router.push('/login');
+        router.replace('/login');
       }, 2000);
     } catch (error) {
       console.error('Setup error:', error);

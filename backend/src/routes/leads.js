@@ -15,7 +15,7 @@ const { catchAsync } = require('../middleware/error');
 router.get('/', 
   protect,
   [
-    query('status').optional().isIn(['new', 'contacted', 'follow_up', 'interested', 'converted', 'lost']).withMessage('Invalid status'),
+    query('status').optional().isIn(['new', 'contacted', 'follow_up', 'qualified', 'converted', 'lost']).withMessage('Invalid status'),
     query('assignedTo').optional().isMongoId().withMessage('Invalid assignedTo ID'),
     query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
     query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100')
@@ -84,8 +84,8 @@ router.get('/kanban',
       query.assignedTo = req.user.id;
     }
     
-    // Get all possible statuses
-    const statuses = ['new', 'contacted', 'follow_up', 'interested', 'converted', 'lost'];
+    // Get all possible statuses (aligned with validators)
+    const statuses = ['new', 'contacted', 'follow_up', 'qualified', 'converted', 'lost'];
     
     // Get leads for each status
     const kanbanData = await Promise.all(
@@ -124,15 +124,10 @@ router.get('/:id',
       });
     }
     
-    // Check if user is authorized to view this lead
-    if (
-      req.user.role === 'executive' && 
-      lead.assignedTo._id.toString() !== req.user.id
-    ) {
-      return res.status(403).json({
-        success: false,
-        message: 'Not authorized to access this lead'
-      });
+    // Authorization: sales can view own leads; manager/admin can view all
+    const canViewAll = hasPermission(req.user.role, 'canViewAllLeads');
+    if (!canViewAll && lead.assignedTo._id.toString() !== req.user.id) {
+      return res.status(403).json({ success: false, message: 'Not authorized to access this lead' });
     }
     
     res.status(200).json({
@@ -152,7 +147,7 @@ router.post('/',
     body('email').optional().isEmail().withMessage('Please provide a valid email'),
     body('phone').optional().isMobilePhone().withMessage('Please provide a valid phone number'),
     body('source').optional().isIn(['website', 'referral', 'social_media', 'email', 'phone', 'advertisement', 'other']).withMessage('Invalid source'),
-    body('status').optional().isIn(['new', 'contacted', 'follow_up', 'interested', 'converted', 'lost']).withMessage('Invalid status'),
+    body('status').optional().isIn(['new', 'contacted', 'follow_up', 'qualified', 'converted', 'lost']).withMessage('Invalid status'),
     body('assignedTo').isMongoId().withMessage('Invalid assignedTo ID')
   ],
   handleValidationErrors,
@@ -167,30 +162,16 @@ router.post('/',
       });
     }
     
-    // Get or create default company
+    // Resolve single company context: prefer env COMPANY_ID, then user.companyId, then first Company
     const Company = require('../models/Company');
-    let companyId = req.user.companyId;
-    
+    let companyId = process.env.COMPANY_ID || req.user.companyId;
+
     if (!companyId) {
-      // Check if default company exists
-      let defaultCompany = await Company.findOne({ domain: 'default-company.crm' });
-      
-      if (!defaultCompany) {
-        // Create default company if it doesn't exist
-        defaultCompany = await Company.create({
-          name: 'Default Company',
-          domain: 'default-company.crm',
-          address: {
-            street: '',
-            city: '',
-            state: '',
-            zip: '',
-            country: ''
-          }
-        });
+      const firstCompany = await Company.findOne().select('_id');
+      if (!firstCompany) {
+        return res.status(500).json({ success: false, message: 'No company found. Please seed a company or set COMPANY_ID env variable.' });
       }
-      
-      companyId = defaultCompany._id;
+      companyId = firstCompany._id;
     }
     
     // Create lead
@@ -233,6 +214,8 @@ router.post('/',
   })
 );
 
+// DUPLICATE CONVERT ROUTE REMOVED - use single, unified implementation below
+
 // @route   PUT api/leads/:id
 // @desc    Update lead
 // @access  Private
@@ -244,65 +227,35 @@ router.put('/:id',
     body('email').optional().isEmail().withMessage('Please provide a valid email'),
     body('phone').optional().isMobilePhone().withMessage('Please provide a valid phone number'),
     body('source').optional().isIn(['website', 'referral', 'social_media', 'email', 'phone', 'advertisement', 'other']).withMessage('Invalid source'),
-    body('status').optional().isIn(['new', 'contacted', 'follow_up', 'interested', 'converted', 'lost']).withMessage('Invalid status'),
+    body('status').optional().isIn(['new', 'contacted', 'follow_up', 'qualified', 'converted', 'lost']).withMessage('Invalid status'),
     body('priority').optional().isIn(['low', 'medium', 'high']).withMessage('Invalid priority')
   ],
   handleValidationErrors,
   catchAsync(async (req, res) => {
-    // Check if lead exists
     const lead = await Lead.findById(req.params.id);
-    
     if (!lead) {
-      return res.status(404).json({
-        success: false,
-        message: 'Lead not found'
-      });
+      return res.status(404).json({ success: false, message: 'Lead not found' });
     }
-    
-    // Check if user is authorized to update this lead
-    if (
-      req.user.role === 'executive' && 
-      lead.assignedTo.toString() !== req.user.id
-    ) {
-      return res.status(403).json({
-        success: false,
-        message: 'Not authorized to update this lead'
-      });
+
+    // Authorization: sales can only update own leads; manager/admin can update any
+    const isOwner = lead.assignedTo.toString() === req.user.id;
+    const canUpdateAll = hasPermission(req.user.role, 'canUpdateAllLeads');
+    if (!isOwner && !canUpdateAll) {
+      return res.status(403).json({ success: false, message: 'Not authorized to update this lead' });
     }
-    
-    // Update fields
+
     const { name, email, phone, company, position, source, status, assignedTo, priority, notes, tags, lastContactDate, nextFollowUpDate } = req.body;
-    
-    // Check if assignedTo is valid
+
     if (assignedTo && !hasPermission(req.user.role, 'canViewAllLeads') && assignedTo !== req.user.id) {
-      return res.status(403).json({
-        success: false,
-        message: 'You can only assign leads to yourself'
-      });
+      return res.status(403).json({ success: false, message: 'You can only assign leads to yourself' });
     }
-    
-    // Update lead
+
     const updatedLead = await Lead.findByIdAndUpdate(
       req.params.id,
-      {
-        name,
-        email,
-        phone,
-        company,
-        position,
-        source,
-        status,
-        assignedTo,
-        priority,
-        notes,
-        tags,
-        lastContactDate,
-        nextFollowUpDate
-      },
+      { name, email, phone, company, position, source, status, assignedTo, priority, notes, tags, lastContactDate, nextFollowUpDate },
       { new: true, runValidators: true }
     ).populate('assignedTo', 'name email');
-    
-    // Log activity
+
     await ActivityLog.create({
       companyId: typeof req.user.companyId === 'object' ? req.user.companyId._id : req.user.companyId,
       user: req.user.id,
@@ -313,11 +266,8 @@ router.put('/:id',
       ipAddress: req.ip,
       userAgent: req.get('User-Agent')
     });
-    
-    res.status(200).json({
-      success: true,
-      data: updatedLead
-    });
+
+    res.status(200).json({ success: true, data: updatedLead });
   })
 );
 
@@ -337,15 +287,11 @@ router.delete('/:id',
       });
     }
     
-    // Check if user is authorized to delete this lead
-    if (
-      req.user.role === 'executive' && 
-      lead.assignedTo.toString() !== req.user.id
-    ) {
-      return res.status(403).json({
-        success: false,
-        message: 'Not authorized to delete this lead'
-      });
+    // Authorization: owner can delete own; admin can delete any; manager can delete via canUpdateAllLeads or a specific delete permission
+    const isOwner = lead.assignedTo.toString() === req.user.id;
+    const canDeleteAny = hasPermission(req.user.role, 'canDeleteAnyData') || hasPermission(req.user.role, 'canUpdateAllLeads');
+    if (!isOwner && !canDeleteAny) {
+      return res.status(403).json({ success: false, message: 'Not authorized to delete this lead' });
     }
     
     await Lead.findByIdAndDelete(req.params.id);
@@ -370,50 +316,44 @@ router.delete('/:id',
 );
 
 // @route   POST api/leads/:id/convert
-// @desc    Convert lead to customer
+// @desc    Convert lead to customer (single consolidated route)
 // @access  Private
 router.post('/:id/convert', 
   protect, 
   validateObjectId,
   [
-    body('address.street').optional().notEmpty().withMessage('Street cannot be empty'),
-    body('address.city').optional().notEmpty().withMessage('City cannot be empty'),
-    body('address.state').optional().notEmpty().withMessage('State cannot be empty'),
-    body('address.zip').optional().notEmpty().withMessage('Zip cannot be empty'),
-    body('address.country').optional().notEmpty().withMessage('Country cannot be empty')
+    body('address.street').optional().notEmpty(),
+    body('address.city').optional().notEmpty(),
+    body('address.state').optional().notEmpty(),
+    body('address.zip').optional().notEmpty(),
+    body('address.country').optional().notEmpty()
   ],
   handleValidationErrors,
   catchAsync(async (req, res) => {
-    // Check if lead exists
     const lead = await Lead.findById(req.params.id);
-    
-    if (!lead) {
-      return res.status(404).json({
-        success: false,
-        message: 'Lead not found'
-      });
+    if (!lead) return res.status(404).json({ success: false, message: 'Lead not found' });
+
+    const isOwner = lead.assignedTo.toString() === req.user.id;
+    const canConvertAll = hasPermission(req.user.role, 'canConvertAllLeads');
+    const canConvertOwn = hasPermission(req.user.role, 'canConvertLeads');
+
+    if (!isOwner && !canConvertAll) {
+      return res.status(403).json({ success: false, message: 'Not authorized to convert this lead' });
     }
-    
-    // Check if user is authorized to convert this lead
-    if (
-      req.user.role === 'executive' && 
-      lead.assignedTo.toString() !== req.user.id
-    ) {
-      return res.status(403).json({
-        success: false,
-        message: 'Not authorized to convert this lead'
-      });
+    if (!canConvertOwn && !canConvertAll) {
+      return res.status(403).json({ success: false, message: 'Insufficient permissions' });
     }
-    
-    // Check if lead is already converted
-    if (lead.convertedToCustomer) {
-      return res.status(400).json({
-        success: false,
-        message: 'Lead is already converted to a customer'
-      });
+
+    if (lead.convertedToCustomer || lead.status === 'converted') {
+      return res.status(400).json({ success: false, message: 'Lead is already converted' });
     }
-    
-    // Create customer from lead
+
+    // Prevent duplicate customer by this lead
+    const existingByLead = await Customer.findOne({ leadId: lead._id });
+    if (existingByLead) {
+      return res.status(400).json({ success: false, message: 'Customer already exists for this lead' });
+    }
+
     const { address } = req.body;
     const customer = await Customer.create({
       name: lead.name,
@@ -421,23 +361,20 @@ router.post('/:id/convert',
       phone: lead.phone,
       company: lead.company,
       position: lead.position,
-      address,
+      address: address || lead.address || {},
       assignedTo: lead.assignedTo,
       leadId: lead._id,
       source: lead.source,
       tags: lead.tags
     });
-    
-    // Update lead to mark as converted
+
     lead.convertedToCustomer = true;
     lead.customerId = customer._id;
     lead.status = 'converted';
     await lead.save();
-    
-    // Populate assignedTo field for response
+
     await customer.populate('assignedTo', 'name email');
-    
-    // Log activity
+
     await ActivityLog.create({
       companyId: typeof req.user.companyId === 'object' ? req.user.companyId._id : req.user.companyId,
       user: req.user.id,
@@ -448,11 +385,8 @@ router.post('/:id/convert',
       ipAddress: req.ip,
       userAgent: req.get('User-Agent')
     });
-    
-    res.status(201).json({
-      success: true,
-      data: customer
-    });
+
+    res.status(201).json({ success: true, data: customer });
   })
 );
 

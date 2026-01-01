@@ -93,10 +93,20 @@ router.post('/register',
       userAgent: req.get('User-Agent')
     });
 
+    res.cookie('accessToken', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 15 * 60 * 1000
+    });
+    res.cookie('refreshToken', refreshTokenValue, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
     res.status(201).json({
       success: true,
-      accessToken,
-      refreshToken: refreshTokenValue,
       user: {
         id: user._id,
         name: user.name,
@@ -199,10 +209,20 @@ router.post('/login',
       userAgent: req.get('User-Agent')
     });
 
+    res.cookie('accessToken', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 15 * 60 * 1000
+    });
+    res.cookie('refreshToken', refreshTokenValue, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
     res.status(200).json({
       success: true,
-      accessToken,
-      refreshToken: refreshTokenValue,
       user: {
         id: user._id,
         name: user.name,
@@ -217,7 +237,7 @@ router.post('/login',
 // @desc    Refresh JWT token
 // @access  Public
 router.post('/refresh', catchAsync(async (req, res) => {
-  const { refreshToken } = req.body;
+  const refreshToken = req.cookies && req.cookies.refreshToken;
 
   if (!refreshToken) {
     return res.status(401).json({
@@ -247,9 +267,15 @@ router.post('/refresh', catchAsync(async (req, res) => {
       { expiresIn: process.env.JWT_EXPIRE || '15m' }
     );
 
+    res.cookie('accessToken', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 15 * 60 * 1000
+    });
+
     res.status(200).json({
-      success: true,
-      accessToken
+      success: true
     });
   } catch (err) {
     return res.status(401).json({
@@ -286,6 +312,9 @@ router.post('/logout', protect, catchAsync(async (req, res) => {
     ipAddress: req.ip,
     userAgent: req.get('User-Agent')
   });
+
+  res.clearCookie('accessToken', { httpOnly: true, sameSite: 'lax' });
+  res.clearCookie('refreshToken', { httpOnly: true, sameSite: 'lax' });
 
   res.status(200).json({
     success: true,

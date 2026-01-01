@@ -6,14 +6,12 @@ import DashboardLayout from '../../components/Layout/DashboardLayout';
 import CustomersList from '../../components/Customers/CustomersList';
 
 export default function Customers() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
   const router = useRouter();
 
-  // Redirect if not authenticated
+  if (loading) return null;
   if (!isAuthenticated) {
-    if (typeof window !== 'undefined') {
-      router.push('/login');
-    }
+    router.replace('/login');
     return null;
   }
 

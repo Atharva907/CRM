@@ -28,7 +28,7 @@ export default function Login() {
 
     if (result.success) {
       toast.success('Logged in successfully');
-      router.push('/dashboard');
+      router.replace('/dashboard');
     } else {
       toast.error(result.message || 'Login failed');
     }

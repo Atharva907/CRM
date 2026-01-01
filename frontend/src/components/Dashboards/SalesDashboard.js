@@ -22,28 +22,34 @@ export default function SalesDashboard({ user }) {
     const fetchSalesStats = async () => {
       try {
         setLoading(true);
-        // In a real implementation, you would fetch data from your API
-        // For now, we'll use mock data
+        
+        // Fetch real data from API
+        const [leadsResponse, customersResponse, dealsResponse, tasksResponse] = await Promise.all([
+          api.get(`/leads?assignedTo=${user._id}&limit=5&sort=-createdAt`),
+          api.get(`/customers?assignedTo=${user._id}&limit=5&sort=-createdAt`),
+          api.get(`/deals?assignedTo=${user._id}&limit=5&sort=-createdAt`),
+          api.get(`/tasks?assignedTo=${user._id}&limit=5&sort=dueDate`)
+        ]);
+        
+        const leads = await leadsResponse.json();
+        const customers = await customersResponse.json();
+        const deals = await dealsResponse.json();
+        const tasks = await tasksResponse.json();
+        
+        // Extract data from API responses
+        const leadsData = leads.data || [];
+        const customersData = customers.data || [];
+        const dealsData = deals.data || [];
+        const tasksData = tasks.data || [];
+        
         setStats({
-          myLeads: 24,
-          myCustomers: 18,
-          myDeals: 7,
-          myTasks: 12,
-          recentLeads: [
-            { id: 1, name: 'Acme Corporation', email: 'contact@acme.com', status: 'new', createdAt: '2023-12-28' },
-            { id: 2, name: 'Global Industries', email: 'info@globalindustries.com', status: 'contacted', createdAt: '2023-12-27' },
-            { id: 3, name: 'Tech Solutions Inc', email: 'hello@techsolutions.com', status: 'qualified', createdAt: '2023-12-26' }
-          ],
-          recentDeals: [
-            { id: 1, title: 'Enterprise Software License', value: 25000, stage: 'negotiation', customerId: 'Acme Corporation' },
-            { id: 2, title: 'Annual Support Contract', value: 15000, stage: 'proposal', customerId: 'Global Industries' },
-            { id: 3, title: 'Training Services', value: 8000, stage: 'qualification', customerId: 'Tech Solutions Inc' }
-          ],
-          upcomingTasks: [
-            { id: 1, title: 'Follow up with Acme Corp', dueDate: '2023-12-31', priority: 'high' },
-            { id: 2, title: 'Prepare proposal for Global Industries', dueDate: '2024-01-02', priority: 'medium' },
-            { id: 3, title: 'Schedule demo with Tech Solutions', dueDate: '2024-01-05', priority: 'medium' }
-          ]
+          myLeads: leads.total || leadsData.length,
+          myCustomers: customers.total || customersData.length,
+          myDeals: deals.total || dealsData.length,
+          myTasks: tasks.total || tasksData.length,
+          recentLeads: leadsData,
+          recentDeals: dealsData,
+          upcomingTasks: tasksData
         });
       } catch (error) {
         console.error('Error fetching sales stats:', error);
@@ -156,153 +162,143 @@ export default function SalesDashboard({ user }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            {/* Recent Leads */}
-            <div className="bg-white shadow rounded-lg lg:col-span-1">
-              <div className="px-4 py-5 sm:p-6">
-                <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-                  Recent Leads
-                </h3>
-                <div className="flow-root">
-                  <ul className="-my-5 divide-y divide-gray-200">
-                    {stats.recentLeads.length > 0 ? (
-                      stats.recentLeads.map((lead) => (
-                        <li key={lead.id} className="py-4">
-                          <div className="flex items-center space-x-3">
-                            <div className="flex-shrink-0">
-                              <div className="h-8 w-8 rounded-full bg-indigo-500 flex items-center justify-center">
-                                <span className="text-white font-medium text-sm">
-                                  {lead.name.charAt(0).toUpperCase()}
-                                </span>
+          {(stats.recentLeads.length > 0 || stats.recentDeals.length > 0 || stats.upcomingTasks.length > 0) && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+              {/* Recent Leads */}
+              {stats.recentLeads.length > 0 && (
+                <div className="bg-white shadow rounded-lg lg:col-span-1">
+                  <div className="px-4 py-5 sm:p-6">
+                    <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+                      Recent Leads
+                    </h3>
+                    <div className="flow-root">
+                      <ul className="-my-5 divide-y divide-gray-200">
+                        {stats.recentLeads.map((lead) => (
+                          <li key={lead.id} className="py-4">
+                            <div className="flex items-center space-x-3">
+                              <div className="flex-shrink-0">
+                                <div className="h-8 w-8 rounded-full bg-indigo-500 flex items-center justify-center">
+                                  <span className="text-white font-medium text-sm">
+                                    {lead.name.charAt(0).toUpperCase()}
+                                  </span>
+                                </div>
                               </div>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-900 truncate">
-                                {lead.name}
-                              </p>
-                              <p className="text-sm text-gray-500 truncate">
-                                {lead.email}
-                              </p>
-                            </div>
-                            <div>
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                {lead.status}
-                              </span>
-                            </div>
-                          </div>
-                        </li>
-                      ))
-                    ) : (
-                      <li className="py-4">
-                        <p className="text-sm text-gray-500">No recent leads</p>
-                      </li>
-                    )}
-                  </ul>
-                </div>
-                <div className="mt-4">
-                  <Link href="/leads" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
-                    View all leads <span aria-hidden="true">&rarr;</span>
-                  </Link>
-                </div>
-              </div>
-            </div>
-
-            {/* Recent Deals */}
-            <div className="bg-white shadow rounded-lg lg:col-span-1">
-              <div className="px-4 py-5 sm:p-6">
-                <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-                  Recent Deals
-                </h3>
-                <div className="flow-root">
-                  <ul className="-my-5 divide-y divide-gray-200">
-                    {stats.recentDeals.length > 0 ? (
-                      stats.recentDeals.map((deal) => (
-                        <li key={deal.id} className="py-4">
-                          <div className="flex items-center space-x-3">
-                            <div className="flex-shrink-0">
-                              <div className="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center">
-                                <span className="text-white font-medium text-sm">
-                                  {deal.title.charAt(0).toUpperCase()}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-900 truncate">
-                                {deal.title}
-                              </p>
-                              <p className="text-sm text-gray-500 truncate">
-                                ${deal.value.toLocaleString()}
-                              </p>
-                            </div>
-                            <div>
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                {deal.stage}
-                              </span>
-                            </div>
-                          </div>
-                        </li>
-                      ))
-                    ) : (
-                      <li className="py-4">
-                        <p className="text-sm text-gray-500">No recent deals</p>
-                      </li>
-                    )}
-                  </ul>
-                </div>
-                <div className="mt-4">
-                  <Link href="/deals" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
-                    View all deals <span aria-hidden="true">&rarr;</span>
-                  </Link>
-                </div>
-              </div>
-            </div>
-
-            {/* Upcoming Tasks */}
-            <div className="bg-white shadow rounded-lg lg:col-span-1">
-              <div className="px-4 py-5 sm:p-6">
-                <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-                  Upcoming Tasks
-                </h3>
-                <div className="flow-root">
-                  <ul className="-my-5 divide-y divide-gray-200">
-                    {stats.upcomingTasks.length > 0 ? (
-                      stats.upcomingTasks.map((task) => (
-                        <li key={task.id} className="py-4">
-                          <div className="flex items-start space-x-3">
-                            <div className="flex-shrink-0 pt-0.5">
-                              <CalendarIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-900 truncate">
-                                {task.title}
-                              </p>
-                              <div className="flex items-center mt-1">
-                                <p className="text-sm text-gray-500 truncate mr-2">
-                                  {task.dueDate}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-gray-900 truncate">
+                                  {lead.name}
                                 </p>
-                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getPriorityColor(task.priority)}`}>
-                                  {task.priority}
+                                <p className="text-sm text-gray-500 truncate">
+                                  {lead.email}
+                                </p>
+                              </div>
+                              <div>
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                  {lead.status}
                                 </span>
                               </div>
                             </div>
-                          </div>
-                        </li>
-                      ))
-                    ) : (
-                      <li className="py-4">
-                        <p className="text-sm text-gray-500">No upcoming tasks</p>
-                      </li>
-                    )}
-                  </ul>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="mt-4">
+                      <Link href="/leads" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
+                        View all leads <span aria-hidden="true">&rarr;</span>
+                      </Link>
+                    </div>
+                  </div>
                 </div>
-                <div className="mt-4">
-                  <Link href="/tasks" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
-                    View all tasks <span aria-hidden="true">&rarr;</span>
-                  </Link>
+              )}
+
+              {/* Recent Deals */}
+              {stats.recentDeals.length > 0 && (
+                <div className="bg-white shadow rounded-lg lg:col-span-1">
+                  <div className="px-4 py-5 sm:p-6">
+                    <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+                      Recent Deals
+                    </h3>
+                    <div className="flow-root">
+                      <ul className="-my-5 divide-y divide-gray-200">
+                        {stats.recentDeals.map((deal) => (
+                          <li key={deal.id} className="py-4">
+                            <div className="flex items-center space-x-3">
+                              <div className="flex-shrink-0">
+                                <div className="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center">
+                                  <span className="text-white font-medium text-sm">
+                                    {deal.title.charAt(0).toUpperCase()}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-gray-900 truncate">
+                                  {deal.title}
+                                </p>
+                                <p className="text-sm text-gray-500 truncate">
+                                  ${deal.value.toLocaleString()}
+                                </p>
+                              </div>
+                              <div>
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                  {deal.stage}
+                                </span>
+                              </div>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="mt-4">
+                      <Link href="/deals" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
+                        View all deals <span aria-hidden="true">&rarr;</span>
+                      </Link>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* Upcoming Tasks */}
+              {stats.upcomingTasks.length > 0 && (
+                <div className="bg-white shadow rounded-lg lg:col-span-1">
+                  <div className="px-4 py-5 sm:p-6">
+                    <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+                      Upcoming Tasks
+                    </h3>
+                    <div className="flow-root">
+                      <ul className="-my-5 divide-y divide-gray-200">
+                        {stats.upcomingTasks.map((task) => (
+                          <li key={task.id} className="py-4">
+                            <div className="flex items-start space-x-3">
+                              <div className="flex-shrink-0 pt-0.5">
+                                <CalendarIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-gray-900 truncate">
+                                  {task.title}
+                                </p>
+                                <div className="flex items-center mt-1">
+                                  <p className="text-sm text-gray-500 truncate mr-2">
+                                    {task.dueDate}
+                                  </p>
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getPriorityColor(task.priority)}`}>
+                                    {task.priority}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="mt-4">
+                      <Link href="/tasks" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
+                        View all tasks <span aria-hidden="true">&rarr;</span>
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
+          )}
 
 
         </>

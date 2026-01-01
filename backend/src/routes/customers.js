@@ -5,6 +5,7 @@ const Customer = require('../models/Customer');
 const Deal = require('../models/Deal');
 const ActivityLog = require('../models/ActivityLog');
 const { protect, authorize } = require('../middleware/auth');
+const { hasPermission } = require('../utils/permissions');
 const { handleValidationErrors, validateObjectId } = require('../middleware/validation');
 const { catchAsync } = require('../middleware/error');
 
@@ -97,15 +98,10 @@ router.get('/:id',
       });
     }
     
-    // Check if user is authorized to view this customer
-    if (
-      req.user.role === 'executive' && 
-      customer.assignedTo._id.toString() !== req.user.id
-    ) {
-      return res.status(403).json({
-        success: false,
-        message: 'Not authorized to access this customer'
-      });
+    // Authorization: sales can view own customers; manager/admin can view all
+    const canViewAll = hasPermission(req.user.role, 'canViewAllCustomers');
+    if (!canViewAll && customer.assignedTo._id.toString() !== req.user.id) {
+      return res.status(403).json({ success: false, message: 'Not authorized to access this customer' });
     }
     
     res.status(200).json({
@@ -131,12 +127,9 @@ router.post('/',
   catchAsync(async (req, res) => {
     const { name, email, phone, company, position, address, source, assignedTo, tags, leadId } = req.body;
     
-    // Check if assigned user exists and is valid
-    if (req.user.role === 'executive' && assignedTo !== req.user.id) {
-      return res.status(403).json({
-        success: false,
-        message: 'Executives can only assign customers to themselves'
-      });
+    // Check if assigned user exists and is valid for sales
+    if (!hasPermission(req.user.role, 'canViewAllCustomers') && assignedTo !== req.user.id) {
+      return res.status(403).json({ success: false, message: 'You can only assign customers to yourself' });
     }
     
     // Check if customer with this email already exists
@@ -210,26 +203,19 @@ router.put('/:id',
       });
     }
     
-    // Check if user is authorized to update this customer
-    if (
-      req.user.role === 'executive' && 
-      customer.assignedTo.toString() !== req.user.id
-    ) {
-      return res.status(403).json({
-        success: false,
-        message: 'Not authorized to update this customer'
-      });
+    // Authorization: sales can update own customers; manager/admin can update any
+    const isOwner = customer.assignedTo.toString() === req.user.id;
+    const canUpdateAll = hasPermission(req.user.role, 'canViewAllCustomers');
+    if (!isOwner && !canUpdateAll) {
+      return res.status(403).json({ success: false, message: 'Not authorized to update this customer' });
     }
     
     // Update fields
     const { name, email, phone, company, position, address, source, assignedTo, tags, isActive, lastContactDate } = req.body;
     
     // Check if assignedTo is valid
-    if (assignedTo && req.user.role === 'executive' && assignedTo !== req.user.id) {
-      return res.status(403).json({
-        success: false,
-        message: 'Executives can only assign customers to themselves'
-      });
+    if (assignedTo && !hasPermission(req.user.role, 'canViewAllCustomers') && assignedTo !== req.user.id) {
+      return res.status(403).json({ success: false, message: 'You can only assign customers to yourself' });
     }
     
     // Check if email is already taken by another customer
@@ -296,15 +282,11 @@ router.delete('/:id',
       });
     }
     
-    // Check if user is authorized to delete this customer
-    if (
-      req.user.role === 'executive' && 
-      customer.assignedTo.toString() !== req.user.id
-    ) {
-      return res.status(403).json({
-        success: false,
-        message: 'Not authorized to delete this customer'
-      });
+    // Authorization: owner or admin/manager
+    const isOwner = customer.assignedTo.toString() === req.user.id;
+    const canDeleteAny = hasPermission(req.user.role, 'canDeleteAnyData') || hasPermission(req.user.role, 'canViewAllCustomers');
+    if (!isOwner && !canDeleteAny) {
+      return res.status(403).json({ success: false, message: 'Not authorized to delete this customer' });
     }
     
     // Check if customer has any deals
@@ -359,15 +341,11 @@ router.post('/:id/notes',
       });
     }
     
-    // Check if user is authorized to add note to this customer
-    if (
-      req.user.role === 'executive' && 
-      customer.assignedTo.toString() !== req.user.id
-    ) {
-      return res.status(403).json({
-        success: false,
-        message: 'Not authorized to add note to this customer'
-      });
+    // Authorization: owner or manager/admin
+    const isOwner = customer.assignedTo.toString() === req.user.id;
+    const canNoteAll = hasPermission(req.user.role, 'canViewAllCustomers');
+    if (!isOwner && !canNoteAll) {
+      return res.status(403).json({ success: false, message: 'Not authorized to add note to this customer' });
     }
     
     // Add note
@@ -426,15 +404,11 @@ router.put('/:id/notes/:noteId',
       });
     }
     
-    // Check if user is authorized to update note on this customer
-    if (
-      req.user.role === 'executive' && 
-      customer.assignedTo.toString() !== req.user.id
-    ) {
-      return res.status(403).json({
-        success: false,
-        message: 'Not authorized to update note on this customer'
-      });
+    // Authorization: owner or manager/admin
+    let isOwner = customer.assignedTo.toString() === req.user.id;
+    const canNoteAll = hasPermission(req.user.role, 'canViewAllCustomers');
+    if (!isOwner && !canNoteAll) {
+      return res.status(403).json({ success: false, message: 'Not authorized to update note on this customer' });
     }
     
     // Find the note
@@ -447,15 +421,9 @@ router.put('/:id/notes/:noteId',
       });
     }
     
-    // Check if user created this note or is admin/manager
-    if (
-      req.user.role === 'executive' && 
-      note.createdBy.toString() !== req.user.id
-    ) {
-      return res.status(403).json({
-        success: false,
-        message: 'Not authorized to update this note'
-      });
+    // Check if user created this note or is manager/admin
+    if (!canNoteAll && note.createdBy.toString() !== req.user.id) {
+      return res.status(403).json({ success: false, message: 'Not authorized to update this note' });
     }
     
     // Update note
@@ -503,15 +471,11 @@ router.delete('/:id/notes/:noteId',
       });
     }
     
-    // Check if user is authorized to delete note from this customer
-    if (
-      req.user.role === 'executive' && 
-      customer.assignedTo.toString() !== req.user.id
-    ) {
-      return res.status(403).json({
-        success: false,
-        message: 'Not authorized to delete note from this customer'
-      });
+    // Authorization: owner or manager/admin
+    const isOwner = customer.assignedTo.toString() === req.user.id;
+    const canNoteAll = hasPermission(req.user.role, 'canViewAllCustomers');
+    if (!isOwner && !canNoteAll) {
+      return res.status(403).json({ success: false, message: 'Not authorized to delete note from this customer' });
     }
     
     // Find the note
@@ -525,14 +489,8 @@ router.delete('/:id/notes/:noteId',
     }
     
     // Check if user created this note or is admin/manager
-    if (
-      req.user.role === 'executive' && 
-      note.createdBy.toString() !== req.user.id
-    ) {
-      return res.status(403).json({
-        success: false,
-        message: 'Not authorized to delete this note'
-      });
+    if (!canNoteAll && note.createdBy.toString() !== req.user.id) {
+      return res.status(403).json({ success: false, message: 'Not authorized to delete this note' });
     }
     
     // Remove note

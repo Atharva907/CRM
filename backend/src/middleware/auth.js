@@ -7,12 +7,13 @@ const { hasPermission } = require('../utils/permissions');
 const protect = async (req, res, next) => {
   let token;
 
-  // Get token from header
+  // Prefer Authorization header, else fall back to HttpOnly cookie
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     token = req.headers.authorization.split(' ')[1];
+  } else if (req.cookies && req.cookies.accessToken) {
+    token = req.cookies.accessToken;
   }
 
-  // Check if token exists
   if (!token) {
     return res.status(401).json({
       success: false,
@@ -21,13 +22,14 @@ const protect = async (req, res, next) => {
   }
 
   try {
-    // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Get user from the token
     req.user = await User.findById(decoded.id);
 
-    // Check if account is locked
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'User not found' });
+    }
+
     if (req.user.lockUntil && req.user.lockUntil > Date.now()) {
       return res.status(423).json({
         success: false,
@@ -36,7 +38,6 @@ const protect = async (req, res, next) => {
       });
     }
     
-    // Check if user is active
     if (!req.user.isActive) {
       return res.status(401).json({
         success: false,

@@ -7,18 +7,19 @@ import DashboardLayout from '../../components/Layout/DashboardLayout';
 import RoleBasedDashboard from '../../components/Auth/RoleBasedDashboard';
 
 export default function Dashboard() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, loading } = useAuth();
   const router = useRouter();
 
-  // Redirect if not authenticated
+  // Redirect if not authenticated (after loading resolved)
   useEffect(() => {
+    if (loading) return;
     if (!isAuthenticated) {
-      router.push('/login');
+      router.replace('/login');
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, router, loading]);
 
-  if (!isAuthenticated) {
-    return null; // Will redirect in useEffect
+  if (loading || !isAuthenticated) {
+    return null; // Wait for auth or redirect
   }
 
   return (
